@@ -5,16 +5,20 @@ from Constants import Constants
 import Utils
 
 class File(object):
-    def __init__(self, name, status=None, fake=False, basepath=None):
-        self.file_exists = None
-        self.basepath = None
-        self.status = status
+
+
+    def __init__(self, name, **kwargs):
         self.name = name
+        self.status = kwargs.get("status", None)
+        self.fake = kwargs.get("fake", False)
+        self.basepath = kwargs.get("basepath", None)
 
-        if basepath:
-            self.name = os.path.join(basepath,name)
+        self.file_exists = None
 
-        if fake:
+        if self.basepath:
+            self.name = os.path.join(self.basepath,self.name)
+
+        if self.fake:
             self.file_exists = True
             self.status = Constants.FAKE
 
@@ -36,7 +40,7 @@ class File(object):
         return self.file_exists
     
     def update(self):
-        self.file_exists = os.path.exists(self.name)
+        self.file_exists = self.fake or os.path.exists(self.name)
 
     def set_status(self, status):
         self.update()
@@ -47,12 +51,22 @@ class File(object):
 
 
 class EventsFile(File):
-    def __init__ (self, name, status=None, nevents=None, nevents_negative=None):
-        self.file_exists = None
-        self.name = name
-        self.status = status
-        self.nevents = nevents
-        self.nevents_negative = nevents_negative
+
+    def __init__(self, name, **kwargs):
+        self.nevents = kwargs.get("nevents", None)
+        self.nevents_negative = kwargs.get("nevents_negative", None)
+
+        super(self.__class__, self).__init__(name,**kwargs)
+
+    def get_nevents(self):
+        return self.nevents
+
+    def get_nevents_positive(self):
+        return self.nevents - self.nevents_negative
+
+    def get_nevents_negative(self):
+        return self.nevents_negative
 
 if __name__ == '__main__':
     pass
+
