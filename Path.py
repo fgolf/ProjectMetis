@@ -24,6 +24,43 @@ class Path(object):
     def get_tasks(self):
         return self.tasks
 
+    def compute(self):
+        """
+        Compute dependencies of this path
+        Very simple right now. For example, loops through
+        task list in pairs and sets latter task requirement
+        to former task 
+        """
+        for t1,t2 in zip(self.tasks, self.tasks[1:]):
+            t2.set_requirements([t1])
+
+    def run(self):
+        # Compute dependencies before running path
+        self.compute()
+
+        for task in self.tasks:
+            if not task.complete():
+                # print "Not complete, so running", task
+                task.run()
+            else:
+                pass
+                # print "Completed", task
+
+    def complete(self):
+        """
+        Returns simple boolean for total completion (by default, 
+        this is the completion status of the final task)
+        """
+        return self.tasks[-1].complete()
+
+    def complete_list(self):
+        """
+        Returns list of booleans for completion status of 
+        each task in the path
+        """
+        return map(lambda x:x.complete(), self.tasks)
+
+
 
 if __name__ == "__main__":
     pass
