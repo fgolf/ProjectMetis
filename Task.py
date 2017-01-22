@@ -7,6 +7,8 @@ class Task(object):
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
+        self.requirements = kwargs.get("requirements", [])
+
         # Set all values on class instance
         for key, value in self.kwargs.items():
             setattr(self, key, value)
@@ -22,16 +24,10 @@ class Task(object):
         >>> print t1
         Task(blah=asdf, foo=42)
         """
-        return "{}({})".format(self.__class__.__name__,", ".join(["{}={}".format(k,v) for k,v in self.kwargs.items()]))
+        return "{}(\n\t{}\n)".format(self.__class__.__name__,",\n\t ".join(["{}={}".format(k,v) for k,v in self.kwargs.items()]))
 
-    # def __getattr__(self, attr):
-    #     """
-    #     Catch cases where user doesn't feed in necessary attributes to class
-    #     """
-    #     if not hasattr(self, attr):
-    #         raise AttributeError("This class is missing the attribute: {}".format(attr))
-    #     else:
-    #         super().__getattr__(key, value)
+        # short version
+        # return "<{}_{}>".format(self.get_task_name(), self.get_task_hash())
 
     def get_task_name(self):
         return self.__class__.__name__
@@ -59,8 +55,19 @@ class Task(object):
 
     def run(self):
         """
+        Wrapper runner for the class
+        """
+        if self.requirements_satisfied():
+            # print "requirements satisfied, so running"
+            self.process()
+        else:
+            pass
+            # print "requirements not satisfied, so not running"
+
+    def process(self):
+        """
         OVERLOAD
-        Main runner for the class
+        Main runner for the class which is user specified
         """
         pass
 
@@ -85,13 +92,24 @@ class Task(object):
         """
         return []
 
-    def requires(self):
+    def get_requirements(self):
         """
-        OVERLOAD
-        The Tasks that this Task depends on.
-        A Task will only run if all of the Tasks that it requires are completed.
+        Get the tasks that this Task depends on.
         """
-        return []
+        return self.requirements
+
+    def set_requirements(self, requirements):
+        """
+        Set Tasks that this Task depends on.
+        A Task should only run if all of the Tasks that it requires are completed.
+        """
+        self.requirements = requirements
+
+    def requirements_satisfied(self):
+        """
+        Returns True if all requirements are satisfied
+        """
+        return all(map(lambda x: x.complete(), self.requirements))
 
     def get_inputs(self):
         """
@@ -107,18 +125,6 @@ class Task(object):
     def on_success(self):
         pass
 
-
-
-
 if __name__ == "__main__":
-    t1 = Task(foo=42,blah="asdf")
-    print t1
-
-    # t2 = t1.clone(c=42)
-    t2 = t1.clone(foo=43,c=-1.2)
-    print t2
-
-    print t1.initialized()
-    print t2.initialized()
-
+    pass
 
