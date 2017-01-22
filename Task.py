@@ -13,8 +13,8 @@ class Task(object):
 
         self.hash = self.get_task_hash()
 
-        print self.kwargs
-        print self.hash
+        # print self.kwargs
+        # print self.hash
 
     def __repr__(self):
         """
@@ -23,6 +23,15 @@ class Task(object):
         Task(blah=asdf, foo=42)
         """
         return "{}({})".format(self.__class__.__name__,", ".join(["{}={}".format(k,v) for k,v in self.kwargs.items()]))
+
+    # def __getattr__(self, attr):
+    #     """
+    #     Catch cases where user doesn't feed in necessary attributes to class
+    #     """
+    #     if not hasattr(self, attr):
+    #         raise AttributeError("This class is missing the attribute: {}".format(attr))
+    #     else:
+    #         super().__getattr__(key, value)
 
     def get_task_name(self):
         return self.__class__.__name__
@@ -50,54 +59,46 @@ class Task(object):
 
     def run(self):
         """
+        OVERLOAD
         Main runner for the class
         """
         pass
 
     def complete(self):
         """
+        OVERLOAD
         If the task has any outputs, return ``True`` if all outputs exist.
         Otherwise, return ``False``.
-        However, you may freely override this method with custom logic.
         """
-        outputs = flatten(self.output())
-        return all(map(lambda output: output.exists(), outputs))
+        return all(map(lambda output: output.exists(), self.get_outputs()))
 
-    @classmethod
-    def bulk_complete(cls, parameter_tuples):
+    def completed_outputs(self):
         """
-        Returns those of parameter_tuples for which this Task is complete.
-        Override (with an efficient implementation) for efficient scheduling
-        with range tools. Keep the logic consistent with that of complete().
+        Return list of completed output objects
         """
-        raise BulkCompleteNotImplementedError()
+        return [o for o in self.get_outputs() if o.exists()]
 
-    def output(self):
+    def get_outputs(self):
         """
-        The output that this Task produces.
-        The output of the Task determines if the Task needs to be run--the task
-        is considered finished iff the outputs all exist. Subclasses should
+        OVERLOAD
+        Returns list of output objects that this Task produces.
         """
-        return []  # default impl
+        return []
 
     def requires(self):
         """
+        OVERLOAD
         The Tasks that this Task depends on.
         A Task will only run if all of the Tasks that it requires are completed.
         """
-        return []  # default impl
+        return []
 
-    def process_resources(self):
-        return self.resources  # default impl
-
-    def input(self):
+    def get_inputs(self):
         """
-        Returns the outputs of the Tasks returned by :py:meth:`requires`
-        See :ref:`Task.input`
-        :return: a list of :py:class:`Target` objects which are specified as
-                 outputs of all required Tasks.
+        OVERLOAD
+        Returns list of input objects that this Task requires.
         """
-        return getpaths(self.requires())
+        return []
 
     def on_failure(self, exception):
         traceback_string = traceback.format_exc()
