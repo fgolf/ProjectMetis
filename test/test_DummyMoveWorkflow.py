@@ -43,8 +43,13 @@ class DummyMoveWorkflowTest(unittest.TestCase):
         # Make a path, which will run tasks in sequence provided previous tasks
         # finish. Default dependency graph ("scheduled mode") will make it so 
         # that t2 depends on t1 and t3 depends on t1
-        p1 = Path([t1,t2,t3])
+        pa = Path([t1,t2])
+        pb = Path([t3])
 
+        # Yes, it was silly to make two paths, but that was done to showcase
+        # the following concatenation ability (note that "addition" here is not
+        # commutative)
+        p1 = pa+pb
 
         while not p1.complete():
             p1.run()
