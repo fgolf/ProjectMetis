@@ -10,6 +10,7 @@ class DummyMoveTask(Task):
         # Handle whatever kwargs we want here
         self.inputs = kwargs.get("inputs", [])
         self.outputs = kwargs.get("outputs", [])
+        self.create_inputs = kwargs.get("create_inputs", [])
         self.min_completion_fraction = kwargs.get("min_completion_fraction", 1.0)
 
         # Now pass all of them to the parent class
@@ -24,16 +25,17 @@ class DummyMoveTask(Task):
     def complete(self):
         bools = map(lambda output: output.exists(), self.get_outputs())
         frac = 1.0*sum(bools)/len(bools)
-        print bools, frac
-        return frac > self.min_completion_fraction
+        return frac >= self.min_completion_fraction
 
-    def run(self, create_inputs=False):
+    def process(self):
         """
         Moves (one-to-one) input files to output files
         """
 
         for inp,out in zip(self.get_inputs(),self.get_outputs()):
-            if create_inputs and not inp.exists():
+
+            if self.create_inputs and not inp.exists():
+                print "Specified create_inputs=True, so creating input file {}".format(inp.get_name())
                 os.system("touch {}".format(inp.get_name()))
                 inp.update()
 
@@ -58,11 +60,12 @@ if __name__ == "__main__":
     dpt = DummyMoveTask(
             inputs = inputs,
             outputs = outputs,
+            create_inputs = True,
             # min_completion_fraction = 0.6,
             )
 
-    # Run. create_inputs will create the inputs for testing purposes
-    dpt.run(create_inputs=True)
+    # Run.
+    dpt.run()
 
     # If completion threshold is met, print a list of the actually completed outputs
     if dpt.complete():
