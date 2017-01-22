@@ -16,6 +16,8 @@ class Constants:
 
     FAKE = 11
 
+    VALID_STR = "valid"
+
 
 if __name__ == "__main__":
     pass

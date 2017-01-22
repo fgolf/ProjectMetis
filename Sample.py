@@ -1,14 +1,32 @@
 import scripts.dis_client as dis
 
-class Sample:
-    def __init__ (self, tier="CMS3", dataset=None, gtag=None, \
-                  kfact=None, xsec=None, efilt=None, filtname=None, \
-                  analysis=None, tag=None, version=None, \
-                  nevts_in=None, nevts=None, location=None, \
-                  creator=None, status=None, twiki=None, \
-                  siblings=[], files=[], comments=None):
+from Constants import Constants
 
-        self.info = { k:v for k,v in locals().items() if k != "self" }
+class Sample:
+
+    def __init__(self, **kwargs):
+        # Handle whatever kwargs we want here
+        self.info = {
+                "tier": kwargs.get("tier", "CMS3"),
+                "dataset": kwargs.get("dataset", None),
+                "gtag": kwargs.get("gtag", None),
+                "kfact": kwargs.get("kfact", None),
+                "xsec": kwargs.get("xsec", None),
+                "efilt": kwargs.get("efilt", None),
+                "filtname": kwargs.get("filtname", None),
+                "analysis": kwargs.get("analysis", None),
+                "tag": kwargs.get("tag", None),
+                "version": kwargs.get("version", None),
+                "nevents_in": kwargs.get("nevents_in", None),
+                "nevents": kwargs.get("nevents", None),
+                "location": kwargs.get("location", None),
+                "creator": kwargs.get("creator", None),
+                "status": kwargs.get("status", None),
+                "twiki": kwargs.get("twiki", None),
+                "comments": kwargs.get("comments", None),
+                "siblings": kwargs.get("siblings", []),
+                "files": kwargs.get("files", []),
+        }
 
     def load_from_dis (self):
         
@@ -17,7 +35,7 @@ class Sample:
             print "[Sample] Failed to load info for dataset %s from DIS because parameter %s is missing." % (self.info["dataset"], val)
             return False
             
-        query_str = "status=%s, dataset_name=%s, sample_type=%s" % ("valid", self.info["dataset"], self.info["type"])
+        query_str = "status=%s, dataset_name=%s, sample_type=%s" % (Constants.VALID_STR, self.info["dataset"], self.info["type"])
         if self.info["type"] != "CMS3":
             query_str += ", analysis=%s" % (self.info["analysis"])
 
@@ -37,7 +55,7 @@ class Sample:
                 return False
 
             if len(response) > 1:
-                response = self.sort_queury_by_timestamp(response)
+                response = self.sort_query_by_timestamp(response)
                 
             self.info["gtag"]      = response[0]["gtag"]
             self.info["kfact"]     = response[0]["kfactor"]
@@ -51,7 +69,7 @@ class Sample:
             self.info["nevts"]     = response[0]["nevents_out"]
             self.info["location"]  = response[0]["location"]
             self.info["creator"]   = response[0]["assigned_to"]
-            self.info["status"]    = response[0].get("status", "valid")
+            self.info["status"]    = response[0].get("status", Constants.VALID_STR)
             self.info["twiki"]     = response[0]["twiki_name"]
             self.info["siblings"]  = response[0].get("siblings", [])
             self.info["files"]     = response[0].get("files", [])
@@ -74,3 +92,4 @@ class Sample:
         
 if __name__ == '__main__':
     s = Sample()
+    print s
