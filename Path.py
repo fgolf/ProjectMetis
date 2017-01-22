@@ -25,14 +25,5 @@ class Path(object):
         return self.tasks
 
 
-
 if __name__ == "__main__":
-    t1 = Task(foo=42,blah="asdf")
-    t2 = Task(new=22)
-    p1 = Path([t1])
-    p2 = Path([t2])
-    print p1
-    print p2
-    print p1+p2
-    p3 = p2+p1
-    print len(p3+p3)
+    pass
