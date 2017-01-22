@@ -1,5 +1,8 @@
 import time                                                
 
+"""
+Decorator for timing things will come in handy for debugging
+"""
 def time_it(method):
 
     def timed(*args, **kw):
