@@ -17,4 +17,4 @@ To run all workflow tests, execute:
 `python -m unittest discover -p "test_*.py"`
 
 To run all tests, execute:
-`python -m unittest discover -p "*_t.py" -p "test_*.py"`
+`python -m unittest discover -s test -p "*.py"`
