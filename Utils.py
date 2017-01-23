@@ -32,6 +32,14 @@ def get_timestamp():
     # return current time as a unix timestamp
     return int(datetime.datetime.now().strftime("%s"))
 
+def sum_dicts(dicts):
+    # takes a list of dicts and sums the values
+    ret = defaultdict(int)
+    for d in dicts:
+        for k, v in d.items():
+            ret[k] += v
+    return dict(ret)
+
 def setup_logger(logger_name="metis_logger"):
     """
     logger_name = u.setup_logger()
