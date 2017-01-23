@@ -1,6 +1,7 @@
+import unittest
+
 from Task import Task
 from Constants import Constants
-import unittest
 
 class TaskTest(unittest.TestCase):
 

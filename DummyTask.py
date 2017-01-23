@@ -44,32 +44,4 @@ class DummyMoveTask(Task):
             print "Running on", inp.get_name(), out.get_name()
 
 if __name__ == "__main__":
-
-    # Set up 3 inputs and 3 output files in a temporary base folder
-    inputs = []
-    outputs = []
-    basepath = "/tmp/{}/metis".format(os.getenv("USER"))
-    os.system("mkdir -p {}".format(basepath))
-    for i in range(3):
-        inputs.append( File(basepath=basepath, name="in_{}.root".format(i)) )
-        outputs.append( File(basepath=basepath, name="out_{}.root".format(i)) )
-
-    # Make a DummyMoveTask with previous inputs, outputs
-    # each input will be moved to the corresponding output file
-    # by default, completion fraction must be 1.0, but can be specified
-    dpt = DummyMoveTask(
-            inputs = inputs,
-            outputs = outputs,
-            create_inputs = True,
-            # min_completion_fraction = 0.6,
-            )
-
-    # Run.
-    dpt.run()
-
-    # If completion threshold is met, print a list of the actually completed outputs
-    if dpt.complete():
-        print "Completed",
-        print dpt.completed_outputs()
-
-
+    pass

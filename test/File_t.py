@@ -1,6 +1,7 @@
+import unittest
+
 from File import File, EventsFile
 from Constants import Constants
-import unittest
 
 class FileTest(unittest.TestCase):
     def test_file_exists(self):
