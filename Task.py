@@ -1,6 +1,8 @@
 import traceback
+import logging
 
 from Constants import Constants
+from Utils import setup_logger
 
 class Task(object):
 
@@ -14,9 +16,7 @@ class Task(object):
             setattr(self, key, value)
 
         self.hash = self.get_task_hash()
-
-        # print self.kwargs
-        # print self.hash
+        self.logger = logging.getLogger(setup_logger())
 
     def __repr__(self):
         """
@@ -126,5 +126,6 @@ class Task(object):
         pass
 
 if __name__ == "__main__":
+
     pass
 

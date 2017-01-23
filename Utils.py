@@ -25,11 +25,21 @@ def do_cmd(cmd, returnStatus=False):
     if returnStatus: return status, out
     else: return out
 
+def get_proxy_file():
+    return "/tmp/x509up_u{0}".format(os.getuid())
+
 def get_timestamp():
     # return current time as a unix timestamp
     return int(datetime.datetime.now().strftime("%s"))
 
 def setup_logger(logger_name="metis_logger"):
+    """
+    logger_name = u.setup_logger()
+    logger = logging.getLogger(logger_name)
+    logger.info("blah")
+    logger.debug("blah")
+    """
+
     # set up the logger to use it within run.py and Samples.py
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
@@ -38,7 +48,7 @@ def setup_logger(logger_name="metis_logger"):
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG) # DEBUG level to console
     # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
+    formatter = logging.Formatter('[%(asctime)s] [%(filename)s:%(lineno)s] [%(levelname)s] %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
     logger.addHandler(fh)
