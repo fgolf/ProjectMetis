@@ -1,8 +1,13 @@
+import logging
+
 from Task import Task
+from Utils import setup_logger
 
 class Path(object):
     def __init__(self, tasks):
         self.tasks = tasks
+
+        self.logger = logging.getLogger(setup_logger())
 
     def __repr__(self):
         """

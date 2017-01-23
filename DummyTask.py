@@ -35,13 +35,13 @@ class DummyMoveTask(Task):
         for inp,out in zip(self.get_inputs(),self.get_outputs()):
 
             if self.create_inputs and not inp.exists():
-                print "Specified create_inputs=True, so creating input file {}".format(inp.get_name())
+                self.logger.debug("Specified create_inputs=True, so creating input file {}".format(inp.get_name()))
                 os.system("touch {}".format(inp.get_name()))
                 inp.update()
 
             os.system("mv {} {}".format(inp.get_name(), out.get_name()))
             out.update()
-            print "Running on", inp.get_name(), out.get_name()
+            self.logger.debug("Running on {0} -> {1}".format(inp.get_name(), out.get_name()))
 
 if __name__ == "__main__":
     pass

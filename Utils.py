@@ -48,8 +48,14 @@ def setup_logger(logger_name="metis_logger"):
     logger.debug("blah")
     """
 
+
     # set up the logger to use it within run.py and Samples.py
     logger = logging.getLogger(logger_name)
+    # if the logger is setup, don't add another handler!! otherwise
+    # this results in duplicate printouts every time a class
+    # calls setup_logger()
+    if len(logger.handlers):
+        return logger_name
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler(logger_name + ".log")
     fh.setLevel(logging.INFO) # INFO level to logfile
