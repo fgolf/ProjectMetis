@@ -58,10 +58,9 @@ def setup_logger(logger_name="metis_logger"):
         return logger_name
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler(logger_name + ".log")
-    fh.setLevel(logging.INFO) # INFO level to logfile
+    fh.setLevel(logging.DEBUG) # DEBUG level to logfile
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG) # DEBUG level to console
-    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setLevel(logging.DEBUG) # DEBUG level to console (for actual usage, probably want INFO)
     formatter = logging.Formatter('[%(asctime)s] [%(filename)s:%(lineno)s] [%(levelname)s] %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
@@ -80,7 +79,10 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id=""):
     """
 
     # These are the condor_q -l row names
-    columns = ["ClusterId", "GridJobStatus", "EnteredCurrentStatus", "CMD", "ARGS", "Out", "Err", "HoldReason"]
+    columns = ["ClusterId", "JobStatus", "EnteredCurrentStatus", "CMD", "ARGS", "Out", "Err", "HoldReason"]
+
+    # HTCondor mappings (http://pages.cs.wisc.edu/~adesmet/status.html)
+    status_LUT = { 0: "U", 1: "I", 2: "R", 3: "X", 4: "C", 5: "H", 6: "E" }
 
     columns_str = " ".join(columns)
     selection_str = ""
@@ -97,7 +99,9 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id=""):
     for line in output.splitlines():
         parts = line.split("\t")
         if len(parts) == len(columns):
-            jobs.append(dict(zip(columns, parts)))
+            tmp = dict(zip(columns, parts))
+            tmp["JobStatus"] = status_LUT.get( int(tmp.get("JobStatus",0)),"U" ) if tmp.get("JobStatus",0).isdigit() else "U"
+            jobs.append(tmp)
     return jobs
 
 def condor_rm(cluster_ids=[]):
@@ -182,13 +186,12 @@ if __name__ == "__main__":
 
     # from collections import Counter
     # jobs = condor_q(user="")
-
-    # # print Counter([j["GridJobStatus"] for j in jobs])
+    # print Counter([j["JobStatus"] for j in jobs])
     # print Counter([j["HoldReason"] for j in jobs])
     # # print Counter([j["FileSystemDomain"] for j in jobs])
     # print jobs[-1]
     # # print jobs
 
-    # print [j for j in jobs if j["GridJobStatus"] == "HELD"]
+    # print [j for j in jobs if j["JobStatus"] == "HELD"]
 
 
