@@ -9,6 +9,7 @@ class UtilsTest(unittest.TestCase):
     def test_do_cmd(self):
         self.assertEqual(Utils.do_cmd("echo $USER"), os.getenv("USER"))
 
+    @unittest.skipIf("uaf-" not in os.uname()[1], "CRAB only testable on UAF")
     def test_condor_submit_fake(self):
         self.assertEqual
         success, cluster_id =  Utils.condor_submit(
@@ -19,6 +20,7 @@ class UtilsTest(unittest.TestCase):
         self.assertEqual(cluster_id, -1)
 
     # @unittest.skip("skipped due to sleep")
+    @unittest.skipIf("uaf-" not in os.uname()[1], "CRAB only testable on UAF")
     def test_condor_submission_output_local(self):
         """
         This test actually submits a condor job to the local universe
@@ -45,6 +47,7 @@ class UtilsTest(unittest.TestCase):
                 break
         self.assertEqual(found_it, True)
 
+    @unittest.skipIf("uaf-" not in os.uname()[1], "CRAB only testable on UAF")
     def test_condor_submission_and_status(self):
         basedir = "/tmp/{0}/metis/condor_test/".format(os.getenv("USER"))
         Utils.do_cmd("mkdir -p {0}".format(basedir))

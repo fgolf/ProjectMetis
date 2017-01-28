@@ -1,12 +1,15 @@
 import unittest
 import os
 
-from CrabManager import CrabManager
 from Constants import Constants
 
 class CrabManagerTest(unittest.TestCase):
 
+    @unittest.skipIf("uaf-" not in os.uname()[1], "CRAB only testable on UAF")
     def test_config_parameters(self):
+
+        from CrabManager import CrabManager
+
         basepath = "/tmp/{0}/metis/crab_test/".format(os.getenv("USER"))
         os.system("mkdir -p {0}".format(basepath))
         os.system("touch {0}/pset.py".format(basepath))
