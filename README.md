@@ -3,6 +3,8 @@
 Project details can be found [here](https://docs.google.com/document/d/14XvQRZpccxQ82PWhWLuY8GnHm2fv7orn4wvvxytuQKU/edit).
 
 ## Installation and Setup
+0. Checkout this repository
+1. Create CMSSW environment via `. setup.sh`
 
 ## Run
 
