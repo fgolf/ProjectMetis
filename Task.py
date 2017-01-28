@@ -58,10 +58,11 @@ class Task(object):
         Wrapper runner for the class
         """
         if self.requirements_satisfied():
-            # print "requirements satisfied, so running"
+            self.logger.debug("Requirements met, so proceeding to process")
             self.process()
         else:
             pass
+            self.logger.debug("Requirements for this task not satisfied yet, not processing")
             # print "requirements not satisfied, so not running"
 
     def process(self):
