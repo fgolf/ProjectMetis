@@ -19,15 +19,29 @@ class File(object):
             self.name = os.path.join(self.basepath,self.name)
 
         if self.fake:
-            self.file_exists = True
-            self.status = Constants.FAKE
+            self.set_fake()
 
     def __repr__(self):
-        info = "name={},status={}".format(self.name,self.status)
-        return "{}({})".format(self.__class__.__name__,info)
+        short = True
+        if short:
+            return "<{0}>".format(self.name)
+        else:
+            stat = "None"
+            if self.status: stat = Constants[self.status]
+            info = "name={},status={}".format(self.name,stat)
+            return "{}({})".format(self.__class__.__name__,info)
 
     def get_name(self):
         return self.name
+
+    def get_extension(self):
+        return self.name.rsplit(".",1)[-1]
+
+    def get_basepath(self):
+        if "/" in self.name:
+            return self.name.rsplit("/",1)[0]
+        else:
+            return ""
 
     def exists(self):
         """
@@ -48,6 +62,10 @@ class File(object):
 
     def get_status(self):
         return self.status
+
+    def set_fake(self):
+        self.file_exists = True
+        self.status = Constants.FAKE
 
 
 class EventsFile(File):

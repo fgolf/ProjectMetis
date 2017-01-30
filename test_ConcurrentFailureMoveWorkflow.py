@@ -3,6 +3,7 @@ import time
 import unittest
 
 from ConcurrentTask import ConcurrentFailureMoveTask
+from Utils import do_cmd
 from Path import Path
 from File import File
 
@@ -12,20 +13,25 @@ def test_workflow():
     basepath = "/tmp/{}/metis".format(os.getenv("USER"))
 
     # Clean up before running
-    os.system("rm -f {}/*.root".format(basepath))
+    do_cmd("rm -f {}/*.root".format(basepath))
 
     # Set up 4 layers of input->output files
     step0, step1, step2, step3 = [], [], [], []
-    os.system("mkdir -p {}".format(basepath))
-    for i in range(3):
+    do_cmd("mkdir -p {}".format(basepath))
+    for i in range(6):
         # step0.append( File(basepath=basepath, name="step0_{}.root".format(i)) )
         # step1.append( File(basepath=basepath, name="step1_{}.root".format(i)) )
-        # step2.append( File(basepath=basepath, name="step2_{}.root".format(i)) )
+        # step2.append( File(basepath=basepath, name="step2_{}.root".format(i),fake=(i%2==0)) )
         # step3.append( File(basepath=basepath, name="step3_{}.root".format(i)) )
-        step0.append( "step0_{}.root".format(i) )
-        step1.append( "step1_{}.root".format(i) )
-        step2.append( "step2_{}.root".format(i) )
-        step3.append( "step3_{}.root".format(i) )
+        step0.append( File(name="step0_{}.root".format(i)) )
+        step1.append( File(name="step1_{}.root".format(i)) )
+        # step2.append( File(name="step2_{}.root".format(i),fake=(i%2==0)) )
+        step2.append( File(name="step2_{}.root".format(i)) )
+        step3.append( File(name="step3_{}.root".format(i)) )
+        # step0.append( "step0_{}.root".format(i) )
+        # step1.append( "step1_{}.root".format(i) )
+        # step2.append( "step2_{}.root".format(i) )
+        # step3.append( "step3_{}.root".format(i) )
 
     import pprint
     # print step2
@@ -41,14 +47,33 @@ def test_workflow():
     """
 
     t1 = ConcurrentFailureMoveTask(
-            io_mapping = io_mapping,
+            # io_mapping = io_mapping,
             min_completion_fraction = 0.6,
             create_inputs=True,
             )
 
-    print t1
-    print t1.get_inputs(flatten=False)
-    print t1.get_outputs(flatten=True)
+    first_half = io_mapping[:3]
+    second_half = io_mapping[3:]
+
+    for inputs, outputs in first_half:
+        t1.add_to_io_map(inputs,outputs)
+
+    for inputs, outputs in second_half:
+        t1.add_to_io_map(inputs,outputs)
+
+    t1.run()
+    # print t1.complete()
+    # print t1.get_completed_outputs()
+    # print t1.complete(return_fraction=True)
+
+    # print t1.get_task_hash()
+
+    print t1.complete()
+    print t1.get_completed_outputs()
+
+    print t1.get_inputs()
+    print t1.get_outputs()
+
 
     # t1.run()
 

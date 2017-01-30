@@ -77,10 +77,16 @@ class Task(object):
         OVERLOAD
         If the task has any outputs, return ``True`` if all outputs exist.
         Otherwise, return ``False``.
+        if `return_fraction` is ``True``, return fraction
+        instead of boolean completeness
         """
-        return all(map(lambda output: output.exists(), self.get_outputs()))
+        bools = map(lambda output: output.exists(), self.get_outputs())
+        if len(bools) == 0: frac = 1.0
+        else: frac = 1.0*sum(bools)/len(bools)
 
-    def completed_outputs(self):
+        return frac
+
+    def get_completed_outputs(self):
         """
         Return list of completed output objects
         """

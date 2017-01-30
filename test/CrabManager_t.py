@@ -2,6 +2,7 @@ import unittest
 import os
 
 from Constants import Constants
+from Utils import do_cmd
 
 class CrabManagerTest(unittest.TestCase):
 
@@ -11,8 +12,8 @@ class CrabManagerTest(unittest.TestCase):
         from CrabManager import CrabManager
 
         basepath = "/tmp/{0}/metis/crab_test/".format(os.getenv("USER"))
-        os.system("mkdir -p {0}".format(basepath))
-        os.system("touch {0}/pset.py".format(basepath))
+        do_cmd("mkdir -p {0}".format(basepath))
+        do_cmd("touch {0}/pset.py".format(basepath))
         dataset = "/TTZToLL_M-1to10_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM"
         dataset_user = "/TTZToLL_M-1to10_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/USER"
         request_name =  "test_metis_ttzlowmass"

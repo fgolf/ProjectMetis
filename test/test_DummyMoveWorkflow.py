@@ -5,6 +5,7 @@ import unittest
 from DummyTask import DummyMoveTask
 from Path import Path
 from File import File
+from Utils import do_cmd
 
 
 class DummyMoveWorkflowTest(unittest.TestCase):
@@ -14,11 +15,11 @@ class DummyMoveWorkflowTest(unittest.TestCase):
         basepath = "/tmp/{}/metis".format(os.getenv("USER"))
 
         # Clean up before running
-        os.system("rm {}/*.root".format(basepath))
+        do_cmd("rm {}/*.root".format(basepath))
 
         # Set up 4 layers of input->output files
         step0, step1, step2, step3 = [], [], [], []
-        os.system("mkdir -p {}".format(basepath))
+        do_cmd("mkdir -p {}".format(basepath))
         for i in range(3):
             step0.append( File(basepath=basepath, name="step0_{}.root".format(i)) )
             step1.append( File(basepath=basepath, name="step1_{}.root".format(i)) )

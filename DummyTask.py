@@ -4,6 +4,7 @@ import os
 from Constants import Constants
 from Task import Task
 from File import File
+from Utils import do_cmd
 
 class DummyMoveTask(Task):
     def __init__(self, **kwargs):
@@ -36,10 +37,10 @@ class DummyMoveTask(Task):
 
             if self.create_inputs and not inp.exists():
                 self.logger.debug("Specified create_inputs=True, so creating input file {}".format(inp.get_name()))
-                os.system("touch {}".format(inp.get_name()))
+                do_cmd("touch {}".format(inp.get_name()))
                 inp.update()
 
-            os.system("mv {} {}".format(inp.get_name(), out.get_name()))
+            do_cmd("mv {} {}".format(inp.get_name(), out.get_name()))
             out.update()
             self.logger.debug("Running on {0} -> {1}".format(inp.get_name(), out.get_name()))
 

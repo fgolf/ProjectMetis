@@ -16,6 +16,11 @@ class FileTest(unittest.TestCase):
         f = File("does_not_exist.root", fake=True)
         self.assertEqual(f.exists(), True)
 
+    def test_name_manipulations(self):
+        f = File("/tmp/does_not_exist.root", fake=True)
+        self.assertEqual(f.get_extension(), "root")
+        self.assertEqual(f.get_basepath(), "/tmp")
+
 
 class EventsFileTest(unittest.TestCase):
 
