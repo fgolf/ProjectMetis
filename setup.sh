@@ -4,14 +4,13 @@ source /code/osgcode/cmssoft/cms/cmsset_default.sh
 source /cvmfs/cms.cern.ch/crab3/crab.sh
 source /code/osgcode/cmssoft/cms/cmsset_default.sh
 
-CAMPAIGN="metis_test"
 SCRAM_ARCH="slc6_amd64_gcc530"
 CMS3TAG="CMS3_V08-00-16"
 CMSSW_VER="CMSSW_8_0_21"
 
 export BASEDIR=`pwd`
 
-echo "[setup] Using $CMS3TAG and $CMSSW_VER for this campaign"
+echo "[setup] Using $CMS3TAG and $CMSSW_VER"
 
 # if the cmssw dir doesn't exist or the current tag hasn't been extracted, and if we're not making babies
 if [ ! -d $CMSSW_VER ] || [ ! -e $CMSSW_VER/lib_${CMS3TAG}.tar.gz ]; then

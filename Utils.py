@@ -127,7 +127,7 @@ def condor_submit(**kwargs):
 
     params = {}
 
-    params["universe"] = kwargs.get("universe", "grid")
+    params["universe"] = kwargs.get("universe", "Vanilla")
     params["executable"] = kwargs["executable"]
     params["arguments"] = " ".join(map(str,kwargs["arguments"]))
     params["inputfiles"] = ",".join(kwargs["inputfiles"])
@@ -148,6 +148,7 @@ def condor_submit(**kwargs):
     template = """
     universe={universe}
     grid_resource = condor cmssubmit-r1.t2.ucsd.edu glidein-collector.t2.ucsd.edu
+    +DESIRED_Sites="{sites}"
     +remote_DESIRED_Sites="{sites}"
     executable={executable}
     arguments={arguments}
@@ -155,6 +156,7 @@ def condor_submit(**kwargs):
     transfer_input_files={inputfiles}
     transfer_output_files = ""
     +Owner = undefined
+    +project_Name = \"cmssurfandturf\"
     {extra}
     log={logdir}/{timestamp}.log
     output={logdir}/std_logs/1e.$(Cluster).$(Process).out

@@ -54,11 +54,28 @@ class UtilsTest(unittest.TestCase):
 
         with open("{0}/temp_test.sh".format(basedir),"w") as fhout:
             fhout.write( """#!/usr/bin/env bash
-                        hostname
-                        uname -a
-                        ls -l
-                        date +%s
-                        echo "args: $1 $2 $3 $4"
+#!/usr/bin/env bash
+echo "--- begin header output ---"
+echo "hostname: $(hostname)"
+echo "uname -a: $(uname -a)"
+echo "time: $(date +%s)"
+echo "args: $@"
+echo "ls -l output"
+ls -l
+# logging every 45 seconds gives ~100kb log file/3 hours
+dstat -cdngytlmrs --float --nocolor -T --output dsout.csv 45 >& /dev/null &
+echo "--- end header output ---"
+
+# run main job stuff
+sleep 60s
+
+echo "--- begin dstat output ---"
+cat dsout.csv
+echo "--- end dstat output ---"
+kill %1 # kill dstat
+
+echo "ls -l output"
+ls -l
                         """)
         Utils.do_cmd("chmod a+x {0}/temp_test.sh".format(basedir))
             
