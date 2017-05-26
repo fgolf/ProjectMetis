@@ -185,8 +185,8 @@ class CrabManager(object):
 
     def crab_resubmit(self, more_ram=False):
         try:
-            if more_ram: out = crabCommand('submit', dir=self.task_dir, proxy=get_proxy_file(), maxmemory="3500")
-            else: out = crabCommand('submit', dir=self.task_dir, proxy=get_proxy_file())
+            if more_ram: out = crabCommand('resubmit', dir=self.task_dir, proxy=get_proxy_file(), maxmemory="3500")
+            else: out = crabCommand('resubmit', dir=self.task_dir, proxy=get_proxy_file())
             return out["status"] == "SUCCESS"
         except httplib.HTTPException as e:
             self.logger.warning("got an http exception from crab resubmit")
