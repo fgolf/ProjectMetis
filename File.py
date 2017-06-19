@@ -24,7 +24,7 @@ class File(object):
     def __repr__(self):
         short = True
         if short:
-            return "<{0}>".format(self.name)
+            return "<File: {0}>".format(self.name)
         else:
             stat = "None"
             if self.status: stat = Constants[self.status]
@@ -84,6 +84,26 @@ class EventsFile(File):
 
     def get_nevents_negative(self):
         return self.nevents_negative
+
+    def __repr__(self):
+        return "<File {0}: {1} events>".format(self.name,self.nevents)
+
+class FileDBS(File):
+
+    def __init__(self, name, **kwargs):
+        self.nevents = kwargs.get("nevents", 0.)
+        self.filesizeGB = kwargs.get("filesizeGB", 0.)
+
+        super(self.__class__, self).__init__(name,**kwargs)
+
+    def get_nevents(self):
+        return self.nevents
+
+    def get_filesizeGB(self):
+        return self.filesizeGB
+
+    def __repr__(self):
+        return "<File {0}: {1} events, {2:.2f}GB>".format(self.name,self.nevents, self.filesizeGB)
 
 if __name__ == '__main__':
     pass
