@@ -43,13 +43,22 @@ class File(object):
         else:
             return ""
 
+    def get_index(self):
+        if "." in self.name:
+            noext = self.name.rsplit(".",1)[0]
+            index = int(noext.rsplit("_",1)[1])
+            return index
+        else:
+            raise Exception("Can't extract index from {0}".format(self.get_name()))
+
+
     def exists(self):
         """
         Important NOTE:
         Below if statement basically caches the existence of
-        this file. Call the update() method to re-check.
+        this file if True. Call the update() method to re-check.
         """
-        if self.file_exists is None:
+        if self.file_exists in [None, False]:
             self.file_exists = os.path.exists(self.name)
         return self.file_exists
     
@@ -71,8 +80,8 @@ class File(object):
 class EventsFile(File):
 
     def __init__(self, name, **kwargs):
-        self.nevents = kwargs.get("nevents", None)
-        self.nevents_negative = kwargs.get("nevents_negative", None)
+        self.nevents = kwargs.get("nevents", 0)
+        self.nevents_negative = kwargs.get("nevents_negative", 0)
 
         super(self.__class__, self).__init__(name,**kwargs)
 

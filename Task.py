@@ -32,6 +32,7 @@ class Task(object):
     def get_task_name(self):
         return self.__class__.__name__
 
+
     def get_task_hash(self):
         buff = self.get_task_name()
         for k,v in sorted(self.kwargs.items()):
