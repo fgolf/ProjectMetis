@@ -30,11 +30,23 @@ class CMSSWTask(Task):
         self.output_name = kwargs.get("output_name","output.root")
         self.tag = kwargs.get("tag",None)
 
+        # TODO
+        self.global_tag = kwargs.get("global_tag")
+        self.pset = kwargs.get("pset", None)
+        self.cmssw_version = kwargs.get("cmssw_version", None)
+        self.tarfile = kwargs.get("output_name",None)
+
+        # If we didn't get a globaltag, use the one from DBS
+        if not self.global_tag: self.global_tag = self.sample.get_globaltag()
+
         # Required parameters
         if not self.sample:
             raise Exception("Need to specify a sample!")
         if not self.tag:
             raise Exception("Need to specify a tag to identify the processing!")
+        if not self.tarfile or not self.cmssw_version or not self.pset:
+            raise Exception("Need tarfile, cmssw_version, and pset to do stuff!")
+
 
         # I/O mapping (many-to-one as described above)
         self.io_mapping = []
@@ -54,20 +66,20 @@ class CMSSWTask(Task):
 
 
     def backup(self):
-        backup_dir = "backups/"
+        backup_dir = "backups/{0}/".format(self.unique_name)
         Utils.do_cmd("mkdir -p {0}".format(backup_dir))
-        fname = "{0}/{1}.pkl".format(backup_dir,self.unique_name)
+        fname = "{0}/backup.pkl".format(backup_dir)
         with open(fname,"w") as fhout:
             d = {"io_mapping": self.io_mapping} 
             pickle.dump(d, fhout)
             self.logger.debug("Backed up to {0}".format(fname))
 
     def load(self):
-        backup_dir = "backups/"
+        backup_dir = "backups/{0}/".format(self.unique_name)
         Utils.do_cmd("mkdir -p {0}".format(backup_dir))
-        fname = "{0}/{1}.pkl".format(backup_dir,self.unique_name)
+        fname = "{0}/backup.pkl".format(backup_dir)
         if os.path.exists(fname):
-            with open("{0}/{1}.pkl".format(backup_dir,self.unique_name),"r") as fhin:
+            with open(fname,"r") as fhin:
                 data = pickle.load(fhin)
                 self.io_mapping = data["io_mapping"]
                 self.logger.debug("Loaded backup from {0}".format(fname))
@@ -96,6 +108,9 @@ class CMSSWTask(Task):
         if (nextidx-original_nextidx > 0):
             self.logger.debug("Updated mapping to have {0} more entries".format(nextidx-original_nextidx))
 
+
+    def get_sample(self):
+        return self.sample
 
     def get_inputs(self, flatten=False):
         """
