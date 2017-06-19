@@ -183,6 +183,34 @@ def condor_submit(**kwargs):
         cluster_id = int(out.split("submitted to cluster ")[-1].split(".",1)[0])
     return succeeded, cluster_id
 
+def file_chunker(files, files_per_output=-1, events_per_output=-1, flush=False):
+    """
+    Chunks a list of File objects into list of lists by
+    - max number of files (if files_per_output > 0)
+    - max number of events (if events_per_output > 0)
+    Chunking happens in order while traversing the list, so
+    any leftover can be pushed into a final chunk with flush=True
+    """
+   
+    num = 0
+    chunk, chunks = [], []
+    for f in files:
+        # if the current file's nevents would push the chunk
+        # over the limit, then start a new chunk
+        if (num >= files_per_output > 0) or (num+f.get_nevents() > events_per_output > 0):
+            chunks.append(chunk)
+            num, chunk = 0, []
+        chunk.append(f)
+        if (files_per_output > 0): num += 1
+        elif (events_per_output > 0): num += f.get_nevents()
+    # push remaining partial chunk if flush is True
+    if (len(chunk) == files_per_output) or (flush and len(chunk) > 0):
+        chunks.append(chunk)
+        chunk = []
+    # return list of lists (chunks) and leftover (chunk) which should
+    # be empty if flushed
+    return chunks, chunk
+
 if __name__ == "__main__":
     pass
 

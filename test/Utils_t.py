@@ -9,6 +9,30 @@ class UtilsTest(unittest.TestCase):
     def test_do_cmd(self):
         self.assertEqual(Utils.do_cmd("echo $USER"), os.getenv("USER"))
 
+    def test_file_chunker(self):
+        from File import EventsFile
+        files = [
+            EventsFile("blah1.root",nevents=100),
+            EventsFile("blah2.root",nevents=200),
+            EventsFile("blah3.root",nevents=300),
+            EventsFile("blah4.root",nevents=100),
+            EventsFile("blah5.root",nevents=200),
+            EventsFile("blah6.root",nevents=300),
+            ]
+
+        chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=300, flush=True)
+        self.assertEqual((len(chunks),len(leftoverchunk)) , (4,0))
+
+        chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=300, flush=False)
+        self.assertEqual((len(chunks),len(leftoverchunk)) , (3,1))
+
+        chunks, leftoverchunk = Utils.file_chunker(files, files_per_output=4, flush=True)
+        self.assertEqual((len(chunks),len(leftoverchunk)) , (2,0))
+
+        chunks, leftoverchunk = Utils.file_chunker(files, files_per_output=4, flush=False)
+        self.assertEqual((len(chunks),len(leftoverchunk)) , (1,2))
+
+
     @unittest.skipIf("uaf-" not in os.uname()[1], "CRAB only testable on UAF")
     def test_condor_submit_fake(self):
         self.assertEqual
