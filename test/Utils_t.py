@@ -78,7 +78,6 @@ class UtilsTest(unittest.TestCase):
 
         with open("{0}/temp_test.sh".format(basedir),"w") as fhout:
             fhout.write( """#!/usr/bin/env bash
-#!/usr/bin/env bash
 echo "--- begin header output ---"
 echo "hostname: $(hostname)"
 echo "uname -a: $(uname -a)"

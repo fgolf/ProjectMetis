@@ -41,7 +41,13 @@ class File(object):
         if "/" in self.name:
             return self.name.rsplit("/",1)[0]
         else:
-            return ""
+            return "."
+
+    def get_basename(self):
+        return self.name.rsplit("/",1)[-1]
+
+    def get_basename_noext(self):
+        return self.get_basename().rsplit(".",1)[0]
 
     def get_index(self):
         if "." in self.name:

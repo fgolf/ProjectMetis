@@ -69,7 +69,7 @@ def setup_logger(logger_name="metis_logger"):
     return logger_name
 
 # /home/users/namin/2016/ss/master/SSAnalysis/batch_new/NtupleTools/AutoTwopler/Samples.py
-def condor_q(selection_pairs=None, user="$USER", cluster_id=""):
+def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=[]):
     """
     Return list of dicts with items for each of the columns
     - Selection pair is a list of pairs of [variable_name, variable_value]
@@ -80,6 +80,7 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id=""):
 
     # These are the condor_q -l row names
     columns = ["ClusterId", "JobStatus", "EnteredCurrentStatus", "CMD", "ARGS", "Out", "Err", "HoldReason"]
+    columns.extend(extra_columns)
 
     # HTCondor mappings (http://pages.cs.wisc.edu/~adesmet/status.html)
     status_LUT = { 0: "U", 1: "I", 2: "R", 3: "X", 4: "C", 5: "H", 6: "E" }
@@ -146,26 +147,24 @@ def condor_submit(**kwargs):
             params["extra"] += '+{0}="{1}"\n'.format(*sel_pair)
 
     template = """
-    universe={universe}
-    grid_resource = condor cmssubmit-r1.t2.ucsd.edu glidein-collector.t2.ucsd.edu
-    +DESIRED_Sites="{sites}"
-    +remote_DESIRED_Sites="{sites}"
-    executable={executable}
-    arguments={arguments}
-    transfer_executable=True
-    transfer_input_files={inputfiles}
-    transfer_output_files = ""
-    +Owner = undefined
-    +project_Name = \"cmssurfandturf\"
-    {extra}
-    log={logdir}/{timestamp}.log
-    output={logdir}/std_logs/1e.$(Cluster).$(Process).out
-    error={logdir}/std_logs/1e.$(Cluster).$(Process).err
-    notification=Never
-    should_transfer_files = YES
-    when_to_transfer_output = ON_EXIT
-    x509userproxy={proxy}
-    queue
+universe={universe}
++DESIRED_Sites="{sites}"
+executable={executable}
+arguments={arguments}
+transfer_executable=True
+transfer_input_files={inputfiles}
+transfer_output_files = ""
++Owner = undefined
++project_Name = \"cmssurfandturf\"
+log={logdir}/{timestamp}.log
+output={logdir}/std_logs/1e.$(Cluster).$(Process).out
+error={logdir}/std_logs/1e.$(Cluster).$(Process).err
+notification=Never
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+x509userproxy={proxy}
+{extra}
+queue
     """
 
     if kwargs.get("fake",False):
@@ -181,6 +180,9 @@ def condor_submit(**kwargs):
     if "job(s) submitted to cluster" in out:
         succeeded = True
         cluster_id = int(out.split("submitted to cluster ")[-1].split(".",1)[0])
+    else:
+        raise RuntimeError("Couldn't submit job to cluster because:\n----\n{0}\n----".format(out))
+
     return succeeded, cluster_id
 
 def file_chunker(files, files_per_output=-1, events_per_output=-1, flush=False):

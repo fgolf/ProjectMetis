@@ -1,3 +1,4 @@
+import os
 import traceback
 import logging
 
@@ -17,6 +18,7 @@ class Task(object):
 
         self.hash = self.get_task_hash()
         self.logger = logging.getLogger(setup_logger())
+        self.basedir = os.environ.get("METIS_BASE",".")+"/"
 
     def __repr__(self):
         """
@@ -31,6 +33,10 @@ class Task(object):
 
     def get_task_name(self):
         return self.__class__.__name__
+
+    def get_basedir(self):
+        return self.basedir
+
 
 
     def get_task_hash(self):
