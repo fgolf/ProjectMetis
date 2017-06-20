@@ -38,8 +38,6 @@ class CMSSWTask(Task):
         self.cmssw_version = kwargs.get("cmssw_version", None)
         self.tarfile = kwargs.get("output_name",None)
 
-        # If we didn't get a globaltag, use the one from DBS
-        if not self.global_tag: self.global_tag = self.sample.get_globaltag()
 
         # If we didn't get an output directory, use the canonical format. E.g.,
         #   /hadoop/cms/store/user/namin/ProjectMetis/MET_Run2017A-PromptReco-v2_MINIAOD_CMS4_V00-00-03
@@ -72,13 +70,23 @@ class CMSSWTask(Task):
         if kwargs.get("load_from_backup",True):
             self.load()
 
+        # If we didn't get a globaltag, use the one from DBS
+        # NOTE: This is declared as something to backup and placed after the
+        # self.load() so that we don't spam get_globaltag() as it makes a 
+        # DIS query each time. Would be smarter to remove need to back up
+        # and put maybe a caching decorator for the config query in the
+        # SamplesDBS class!
+        if not self.global_tag: self.global_tag = self.sample.get_globaltag()
+
+        # print self.job_submission_history
+
         # Can keep calling update_mapping afterwards to re-query input files
         self.update_mapping()
 
     def get_taskdir(self):
         task_dir = "{0}/tasks/{1}/".format(self.get_basedir(),self.unique_name)
         if not self.made_taskdir:
-            Utils.do_cmd("mkdir -p {0}/logs".format(task_dir))
+            Utils.do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
             self.made_taskdir = True
         return task_dir
 
@@ -88,7 +96,7 @@ class CMSSWTask(Task):
         """
         to_backup = ["io_mapping","executable_path","pset_path", \
                      "package_path","prepared_inputs","made_taskdir", \
-                     "job_submission_history"]
+                     "job_submission_history","global_tag"]
         fname = "{0}/backup.pkl".format(self.get_taskdir())
         with open(fname,"w") as fhout:
             d = {}
@@ -122,13 +130,20 @@ class CMSSWTask(Task):
             nextidx = max(already_mapped_outputs)+1
         original_nextidx = nextidx+0
         new_files = []
-        files = [f for f in self.sample.get_files() if f.get_name() not in already_mapped_inputs]
+        # if dataset is "closed" and we already have some inputs, then
+        # don't bother doing get_files() again (wastes a DBS query)
+        if len(already_mapped_inputs) > 0 and not self.open_dataset:
+            files  = []
+        else:
+            files = [f for f in self.sample.get_files() if f.get_name() not in already_mapped_inputs]
         flush = (not self.open_dataset) or flush
         prefix, suffix = self.output_name.rsplit(".",1)
         chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=self.events_per_output, files_per_output=self.files_per_output, flush=flush)
         for chunk in chunks:
             output_path = "{0}_{1}.{2}".format(prefix,nextidx,suffix)
             output_file = EventsFile(output_path)
+            nevents_in_output = sum(map(lambda x: x.get_nevents(), chunk))
+            output_file.set_nevents(nevents_in_output)
             self.io_mapping.append([chunk, output_file])
             nextidx += 1
         if (nextidx-original_nextidx > 0):
@@ -198,8 +213,8 @@ class CMSSWTask(Task):
                 # Keep a log of condor_ids for each output file that we've submitted
                 succeeded, cluster_id = self.submit_condor_job(ins, out)
                 if succeeded:
-                    if index not in self.job_submission_history: self.job_submission_history = []
-                    self.job_submission_history.append(cluster_id)
+                    if index not in self.job_submission_history: self.job_submission_history[index] = []
+                    self.job_submission_history[index].append(cluster_id)
                     self.logger.debug("Job for ({0}) submitted to {1}".format(out, cluster_id))
 
             else:
@@ -218,7 +233,7 @@ class CMSSWTask(Task):
                 elif held:
                     self.logger.debug("Job for ({0}) held for {1:.1f} hrs with hold reason: {2}".format(out, hours_since, this_job_dict["HoldReason"]))
 
-                    if hours_since > 0.5:
+                    if hours_since > 5.0:
                         self.logger.debug("Job for ({0}) removed for excessive hold time".format(out))
                         Utils.condor_rm([cluster_id])
 
@@ -243,17 +258,20 @@ class CMSSWTask(Task):
         outname_noext = self.output_name.rsplit(".",1)[0]
         inputs_commasep = ",".join(map(lambda x: x.get_name(), ins))
         index = out.get_index()
-        pset = self.pset_path
+        pset_full = os.path.abspath(self.pset_path)
+        pset_basename = os.path.basename(self.pset_path)
         cmssw_ver = self.cmssw_version
         scramarch = self.scram_arch
         nevts = -1
         executable = self.executable_path
         arguments = [ outdir, outname_noext, inputs_commasep,
-                index, pset, cmssw_ver, scramarch, nevts ]
-        logdir = "{0}/logs/".format(self.get_taskdir())
+                index, pset_basename, cmssw_ver, scramarch, nevts ]
+        logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
+        package_full = os.path.abspath(self.package_path)
         return Utils.condor_submit(executable=executable, arguments=arguments,
-                inputfiles=[self.package_path,self.pset_path], logdir=logdir,
-                selection_pairs=[["taskname",self.unique_name],["jobnum",index]])
+                inputfiles=[package_full,pset_full], logdir=logdir_full,
+                selection_pairs=[["taskname",self.unique_name],["jobnum",index]],
+                fake=False)
 
 
     def prepare_inputs(self):

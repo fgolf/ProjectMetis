@@ -100,6 +100,12 @@ class EventsFile(File):
     def get_nevents_negative(self):
         return self.nevents_negative
 
+    def set_nevents(self, num):
+        self.nevents = num
+
+    def set_nevents_negative(self, num):
+        self.nevents_negative = num
+
     def __repr__(self):
         return "<File {0}: {1} events>".format(self.name,self.nevents)
 
