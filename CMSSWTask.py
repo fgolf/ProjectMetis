@@ -57,9 +57,10 @@ class CMSSWTask(Task):
         # I/O mapping (many-to-one as described above)
         self.io_mapping = []
 
-        # Some flags
+        # Some storage params
         self.prepared_inputs = False
         self.made_taskdir = False
+        self.job_submission_history = {}
 
         # Make a unique name from this task for pickling purposes
         self.unique_name = "{0}_{1}_{2}".format(self.get_task_name(),self.sample.get_datasetname().replace("/","_")[1:],self.tag)
@@ -86,7 +87,8 @@ class CMSSWTask(Task):
         Declare attributes to automatically back up (and later, load) here
         """
         to_backup = ["io_mapping","executable_path","pset_path", \
-                     "package_path","prepared_inputs","made_taskdir"]
+                     "package_path","prepared_inputs","made_taskdir", \
+                     "job_submission_history"]
         fname = "{0}/backup.pkl".format(self.get_taskdir())
         with open(fname,"w") as fhout:
             d = {}
@@ -173,30 +175,36 @@ class CMSSWTask(Task):
 
     def process(self):
         """
+        Main logic for looping through (inputs,output) pairs. In this
+        case, this is where we submit, resubmit, etc. to condor
+        At the end, we call backup() for good measure!!
         """
         self.prepare_inputs()
 
         condor_job_dicts = self.get_running_condor_jobs()
         condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
         for ins, out in self.io_mapping:
+            out.update()
             index = out.get_index()
             on_condor = index in condor_job_indices
             done = out.exists() and not on_condor
             # done = True
-            # NOTE: whenever we submit a condor job, we should keep track
-            # of the number of submissions in a dictionary (and back it up too)
-            # so we can have statistics later
-            # print out, self.unique_name, out.get_index()
             if done:
                 self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
                 continue
 
             if not on_condor:
                 pass
-                # FIXME
-                # self.submit_condor_job(ins, out)
+                # Keep a log of condor_ids for each output file that we've submitted
+                succeeded, cluster_id = self.submit_condor_job(ins, out)
+                if succeeded:
+                    if index not in self.job_submission_history: self.job_submission_history = []
+                    self.job_submission_history.append(cluster_id)
+                    self.logger.debug("Job for ({0}) submitted to {1}".format(out, cluster_id))
+
             else:
                 this_job_dict = next(rj for rj in condor_job_dicts if int(rj["jobnum"]) == index)
+                cluster_id = this_job_dict["ClusterId"]
 
                 running = this_job_dict.get("JobStatus","I") == "R"
                 idle = this_job_dict.get("JobStatus","I") == "I"
@@ -208,7 +216,13 @@ class CMSSWTask(Task):
                 elif idle:
                     self.logger.debug("Job for ({0}) idle for {1:.1f} hrs".format(out, hours_since))
                 elif held:
-                    self.logger.debug("Job for ({0}) held for {1:.1f} hrs".format(out, hours_since))
+                    self.logger.debug("Job for ({0}) held for {1:.1f} hrs with hold reason: {2}".format(out, hours_since, this_job_dict["HoldReason"]))
+
+                    if hours_since > 0.5:
+                        self.logger.debug("Job for ({0}) removed for excessive hold time".format(out))
+                        Utils.condor_rm([cluster_id])
+
+        self.backup()
 
     def get_running_condor_jobs(self):
         """
@@ -237,7 +251,7 @@ class CMSSWTask(Task):
         arguments = [ outdir, outname_noext, inputs_commasep,
                 index, pset, cmssw_ver, scramarch, nevts ]
         logdir = "{0}/logs/".format(self.get_taskdir())
-        Utils.condor_submit(executable=executable, arguments=arguments,
+        return Utils.condor_submit(executable=executable, arguments=arguments,
                 inputfiles=[self.package_path,self.pset_path], logdir=logdir,
                 selection_pairs=[["taskname",self.unique_name],["jobnum",index]])
 
