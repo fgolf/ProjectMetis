@@ -38,19 +38,22 @@ class CMSSWTask(Task):
         self.cmssw_version = kwargs.get("cmssw_version", None)
         self.tarfile = kwargs.get("output_name",None)
 
+        read_only = kwargs.get("read_only",False)
+
 
         # If we didn't get an output directory, use the canonical format. E.g.,
         #   /hadoop/cms/store/user/namin/ProjectMetis/MET_Run2017A-PromptReco-v2_MINIAOD_CMS4_V00-00-03
         hadoop_user = os.environ.get("USER") # NOTE, might be different some weird folks
         self.output_dir = "/hadoop/cms/store/user/{0}/ProjectMetis/{1}_{2}/".format(hadoop_user,self.sample.get_datasetname().replace("/","_")[1:],self.tag)
 
-        # Absolutely require some parameters
-        if not self.sample:
-            raise Exception("Need to specify a sample!")
+        # Absolutely require some parameters unless we're just pulling information
         if not self.tag:
             raise Exception("Need to specify a tag to identify the processing!")
-        if not self.tarfile or not self.cmssw_version or not self.pset:
-            raise Exception("Need tarfile, cmssw_version, and pset to do stuff!")
+        if not self.sample:
+            raise Exception("Need to specify a sample!")
+        if not read_only:
+            if not self.tarfile or not self.cmssw_version or not self.pset:
+                raise Exception("Need tarfile, cmssw_version, and pset to do stuff!")
 
         # I/O mapping (many-to-one as described above)
         self.io_mapping = []
@@ -76,12 +79,14 @@ class CMSSWTask(Task):
         # DIS query each time. Would be smarter to remove need to back up
         # and put maybe a caching decorator for the config query in the
         # SamplesDBS class!
-        if not self.global_tag: self.global_tag = self.sample.get_globaltag()
+        if not read_only:
+            if not self.global_tag: self.global_tag = self.sample.get_globaltag()
 
         # print self.job_submission_history
 
         # Can keep calling update_mapping afterwards to re-query input files
-        self.update_mapping()
+        if not read_only:
+            self.update_mapping()
 
     def get_taskdir(self):
         task_dir = "{0}/tasks/{1}/".format(self.get_basedir(),self.unique_name)
@@ -89,6 +94,9 @@ class CMSSWTask(Task):
             Utils.do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
             self.made_taskdir = True
         return task_dir
+
+    def get_job_submission_history(self):
+        return self.job_submission_history
 
     def backup(self):
         """
@@ -142,6 +150,7 @@ class CMSSWTask(Task):
             files  = []
         else:
             files = [f for f in self.sample.get_files() if f.get_name() not in already_mapped_inputs]
+
         flush = (not self.open_dataset) or flush
         prefix, suffix = self.output_name.rsplit(".",1)
         chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=self.events_per_output, files_per_output=self.files_per_output, flush=flush)
@@ -161,6 +170,13 @@ class CMSSWTask(Task):
 
     def get_outputdir(self):
         return self.output_dir
+
+    def get_io_mapping(self):
+        """
+        Return input-output mapping
+        """
+        return self.io_mapping
+
 
     def get_inputs(self, flatten=False):
         """
@@ -200,15 +216,18 @@ class CMSSWTask(Task):
         case, this is where we submit, resubmit, etc. to condor
         At the end, we call backup() for good measure!!
         """
+        # set up condor input if it's the first time submitting
         self.prepare_inputs()
 
         condor_job_dicts = self.get_running_condor_jobs()
         condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
+
+        # main loop over input-output map
         for ins, out in self.io_mapping:
             # force a recheck to see if file exists or not
             # in case we delete it by hand to regenerate
             out.update() 
-            index = out.get_index()
+            index = out.get_index() # "merged_ntuple_42.root" --> 42
             on_condor = index in condor_job_indices
             done = out.exists() and not on_condor
             if done:
@@ -216,8 +235,7 @@ class CMSSWTask(Task):
                 continue
 
             if not on_condor:
-                pass
-                # Keep a log of condor_ids for each output file that we've submitted
+                # Submit and keep a log of condor_ids for each output file that we've submitted
                 succeeded, cluster_id = self.submit_condor_job(ins, out)
                 if succeeded:
                     if index not in self.job_submission_history: self.job_submission_history[index] = []
@@ -314,6 +332,66 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
         Utils.do_cmd("cp {0} {1}".format(self.tarfile,self.package_path))
 
         self.prepared_inputs = True
+
+    def get_task_summary(self):
+        """
+        returns a dictionary with mapping and condor job info/history:
+        {
+            <output_index>: {
+                "output_file_object": <file_obj>,
+                "input_file_objects": [<file_obj>, ...],
+                "condor_jobs": [
+                        {
+                            "cluster_id": <cluster_id>,
+                            "logfile_err": <err_file_path>,
+                            "logfile_out": <out_file_path>,
+                        },
+                        ...
+                    ],
+                "current_job": <current_condorq_dict>,
+                "is_on_condor": <True|False>
+
+            },
+            ...
+        }
+        """
+
+        # full path to directory with condor log files
+        logdir_full = os.path.abspath("{0}/logs/std_logs/".format(self.get_taskdir()))+"/"
+
+        # map from clusterid to condor dict
+        d_oncondor = {}
+        for job in self.get_running_condor_jobs():
+            d_oncondor[int(job["ClusterId"])] = job
+
+        # map from output index to historical list of clusterids
+        d_history = self.get_job_submission_history()
+            
+        # map from output index to summary dictionaries
+        d_summary = {}
+        for ins, out in self.get_io_mapping():
+            index = out.get_index()
+            d_summary[index] = {}
+            d_summary[index]["output"] = out
+            d_summary[index]["inputs"] = ins
+            submission_history = d_history.get(index,[])
+            is_on_condor = False
+            last_clusterid = -1
+            if len(submission_history) > 0:
+                last_clusterid = submission_history[-1]
+                is_on_condor = last_clusterid in d_oncondor
+            d_summary[index]["current_job"] = d_oncondor.get(last_clusterid,{})
+            d_summary[index]["is_on_condor"] = is_on_condor
+            d_summary[index]["condor_jobs"] = []
+            for clusterid in submission_history:
+                d_job = {
+                        "cluster_id": clusterid,
+                        "logfile_err": "{0}/1e.{1}.0.{2}".format(logdir_full,clusterid,"err"),
+                        "logfile_out": "{0}/1e.{1}.0.{2}".format(logdir_full,clusterid,"out"),
+                        }
+                d_summary[index]["condor_jobs"].append(d_job)
+
+        return d_summary
 
 
 
