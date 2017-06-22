@@ -8,6 +8,7 @@ PSET=$5
 CMSSWVERSION=$6
 SCRAMARCH=$7
 NEVTS=$8
+EXPECTEDNEVTS=$9
 
 # Make sure OUTPUTNAME doesn't have .root since we add it manually
 OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
@@ -19,6 +20,8 @@ echo "INPUTFILENAMES: $INPUTFILENAMES"
 echo "IFILE: $IFILE"
 echo "PSET: $PSET"
 echo "CMSSWVERSION: $CMSSWVERSION"
+echo "NEVTS: $NEVTS"
+echo "EXPECTEDNEVTS: $EXPECTEDNEVTS"
 
 echo "hostname: $(hostname)"
 echo "uname -a: $(uname -a)"
@@ -69,7 +72,12 @@ foundBad = False
 try:
     f1 = r.TFile("${OUTPUTNAME}.root")
     t = f1.Get("Events")
-    print "[RSR] ntuple has %i events" % t.GetEntries()
+    nevts = t.GetEntries()
+    expectednevts = ${EXPECTEDNEVTS}
+    print "[RSR] ntuple has %i events and expected %i" % (t.GetEntries(), expectednevts)
+    if int(t.GetEntries()) != int(expectednevts):
+        print "[RSR] nevents mismatch"
+        foundBad = True
     for i in range(0,t.GetEntries(),1):
         if t.GetEntry(i) < 0:
             foundBad = True

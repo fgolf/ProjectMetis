@@ -122,6 +122,12 @@ class CMSSWTask(Task):
         """
         Given the sample, make the input-output mapping by chunking
         """
+
+        # # Hack to go back and add in the base output directory for already pickled tasks
+        # for i in range(len(self.io_mapping)):
+        #     if "/" in self.io_mapping[i][-1].get_name(): continue
+        #     self.io_mapping[i][-1].set_name( self.get_outputdir()+self.io_mapping[i][-1].get_name() )
+
         # get set of filenames from File objects that have already been mapped
         already_mapped_inputs = set(map(lambda x: x.get_name(),self.get_inputs(flatten=True)))
         already_mapped_outputs = map(lambda x: x.get_index(),self.get_outputs())
@@ -140,7 +146,7 @@ class CMSSWTask(Task):
         prefix, suffix = self.output_name.rsplit(".",1)
         chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=self.events_per_output, files_per_output=self.files_per_output, flush=flush)
         for chunk in chunks:
-            output_path = "{0}_{1}.{2}".format(prefix,nextidx,suffix)
+            output_path = "{0}/{1}_{2}.{3}".format(self.get_outputdir(),prefix,nextidx,suffix)
             output_file = EventsFile(output_path)
             nevents_in_output = sum(map(lambda x: x.get_nevents(), chunk))
             output_file.set_nevents(nevents_in_output)
@@ -199,11 +205,12 @@ class CMSSWTask(Task):
         condor_job_dicts = self.get_running_condor_jobs()
         condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
         for ins, out in self.io_mapping:
-            out.update()
+            # force a recheck to see if file exists or not
+            # in case we delete it by hand to regenerate
+            out.update() 
             index = out.get_index()
             on_condor = index in condor_job_indices
             done = out.exists() and not on_condor
-            # done = True
             if done:
                 self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
                 continue
@@ -227,14 +234,14 @@ class CMSSWTask(Task):
                 hours_since = abs(time.time()-int(this_job_dict["EnteredCurrentStatus"]))/3600.
 
                 if running:
-                    self.logger.debug("Job for ({0}) running for {1:.1f} hrs".format(out, hours_since))
+                    self.logger.debug("Job {0} for ({1}) running for {2:.1f} hrs".format(cluster_id, out, hours_since))
                 elif idle:
-                    self.logger.debug("Job for ({0}) idle for {1:.1f} hrs".format(out, hours_since))
+                    self.logger.debug("Job {0} for ({1}) idle for {2:.1f} hrs".format(cluster_id, out, hours_since))
                 elif held:
-                    self.logger.debug("Job for ({0}) held for {1:.1f} hrs with hold reason: {2}".format(out, hours_since, this_job_dict["HoldReason"]))
+                    self.logger.debug("Job {0} for ({1}) held for {2:.1f} hrs with hold reason: {3}".format(cluster_id, out, hours_since, this_job_dict["HoldReason"]))
 
                     if hours_since > 5.0:
-                        self.logger.debug("Job for ({0}) removed for excessive hold time".format(out))
+                        self.logger.debug("Job {0} for ({1}) removed for excessive hold time".format(cluster_id, out))
                         Utils.condor_rm([cluster_id])
 
         self.backup()
@@ -263,9 +270,10 @@ class CMSSWTask(Task):
         cmssw_ver = self.cmssw_version
         scramarch = self.scram_arch
         nevts = -1
+        expectedevents = out.get_nevents()
         executable = self.executable_path
         arguments = [ outdir, outname_noext, inputs_commasep,
-                index, pset_basename, cmssw_ver, scramarch, nevts ]
+                index, pset_basename, cmssw_ver, scramarch, nevts, expectedevents ]
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
         package_full = os.path.abspath(self.package_path)
         return Utils.condor_submit(executable=executable, arguments=arguments,
@@ -297,6 +305,7 @@ class CMSSWTask(Task):
 if hasattr(process,"eventMaker"):
     process.eventMaker.CMS3tag = cms.string('{tag}')
     process.eventMaker.datasetName = cms.string('{dsname}')
+process.out.dropMetaData = cms.untracked.string("NONE")
 process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
             tag=self.tag, dsname=self.get_sample().get_datasetname(), gtag=self.global_tag
             ))
