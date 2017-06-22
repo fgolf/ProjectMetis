@@ -37,6 +37,9 @@ class Sample(object):
         }
 
         self.logger = logging.getLogger(setup_logger())
+    
+    def __repr__(self):
+        return "<{0} dataset={1}>".format(self.__class__.__name__,self.info["dataset"])
 
     def do_dis_query(self, typ="files"):
 
@@ -140,6 +143,7 @@ class Sample(object):
         return self.info["gtag"]
 
 
+
 class DBSSample(Sample):
     """
     Sample which queries DBS (through DIS)
@@ -155,6 +159,7 @@ class DBSSample(Sample):
         self.info["files"] = fileobjs
         self.info["nevts"] = sum(fo.get_nevents() for fo in fileobjs)
         self.info["tier"] = self.info["dataset"].rsplit("/",1)[-1]
+
 
     def get_nevents(self):
         if self.info.get("nevts",None): return self.info["nevts"]
@@ -179,6 +184,7 @@ class DBSSample(Sample):
         self.info["gtag"] = response["global_tag"]
         self.info["native_cmssw"] = response["native_cmssw"]
         return self.info["native_cmssw"]
+
             
 class DirectorySample(Sample):
     """
