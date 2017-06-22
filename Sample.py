@@ -7,7 +7,10 @@ from Constants import Constants
 from Utils import setup_logger
 from File import FileDBS, EventsFile
 
-class Sample:
+class Sample(object):
+    """
+    General sample which stores as much information as we might want
+    """
 
     def __init__(self, **kwargs):
         # Handle whatever kwargs we want here
@@ -137,7 +140,11 @@ class Sample:
         return self.info["gtag"]
 
 
-class SampleDBS(Sample):
+class DBSSample(Sample):
+    """
+    Sample which queries DBS (through DIS)
+    for central samples
+    """
 
     def load_from_dis(self):
 
@@ -173,8 +180,47 @@ class SampleDBS(Sample):
         self.info["native_cmssw"] = response["native_cmssw"]
         return self.info["native_cmssw"]
             
+class DirectorySample(Sample):
+    """
+    Sample which just does a directory listing to get files
+    Requires a `location` to do an ls and a `dataset`,`tag`
+    for naming purposes
+    Optionally takes `globber` (defaulting to *.root) to select which
+    files inside the `location` get picked up with get_files()
+    """
+
+    def __init__(self, **kwargs):
+        # Handle whatever kwargs we want here
+        needed_params = ["dataset", "location", "tag"]
+        if any(x not in kwargs for x in needed_params):
+            raise Exception("Need parameters: {0}".format(",".join(needed_params)))
+
+        self.globber = kwargs.get("globber","*.root")
+
+        # Pass all of the kwargs to the parent class
+        super(self.__class__, self).__init__(**kwargs)
+
+    def get_files(self):
+        if self.info.get("files",None): return self.info["files"]
+        filepaths = glob.glob(self.info["location"] + "/" + self.globber)
+        self.info["files"] = map(EventsFile,filepaths)
+        return self.info["files"]
+
+    def get_nevents(self):
+        return self.info.get("nevts",-1)
+
+    def get_globaltag(self):
+        return self.info.get("gtag","dummy_gtag")
 
 
 if __name__ == '__main__':
     s = Sample()
-    print s
+
+    # ds = DirectorySample(
+    #         dataset="/blah/blah/MINE",
+    #         location="/hadoop/cms/store/user/namin/ProjectMetis/JetHT_Run2017A-PromptReco-v3_MINIAOD_CMS4_V00-00-03",
+    #         tag="mytagv1",
+    #         )
+    # print ds.get_files()
+    # print ds.get_globaltag()
+    # print ds.get_datasetname()
