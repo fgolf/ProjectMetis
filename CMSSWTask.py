@@ -43,7 +43,7 @@ class CMSSWTask(Task):
 
         # If we didn't get an output directory, use the canonical format. E.g.,
         #   /hadoop/cms/store/user/namin/ProjectMetis/MET_Run2017A-PromptReco-v2_MINIAOD_CMS4_V00-00-03
-        hadoop_user = os.environ.get("USER") # NOTE, might be different some weird folks
+        hadoop_user = os.environ.get("USER") # NOTE, might be different for some weird folks
         self.output_dir = "/hadoop/cms/store/user/{0}/ProjectMetis/{1}_{2}/".format(hadoop_user,self.sample.get_datasetname().replace("/","_")[1:],self.tag)
 
         # Absolutely require some parameters unless we're just pulling information
@@ -81,8 +81,6 @@ class CMSSWTask(Task):
         # SamplesDBS class!
         if not read_only:
             if not self.global_tag: self.global_tag = self.sample.get_globaltag()
-
-        # print self.job_submission_history
 
         # Can keep calling update_mapping afterwards to re-query input files
         if not read_only:
@@ -130,11 +128,6 @@ class CMSSWTask(Task):
         """
         Given the sample, make the input-output mapping by chunking
         """
-
-        # # Hack to go back and add in the base output directory for already pickled tasks
-        # for i in range(len(self.io_mapping)):
-        #     if "/" in self.io_mapping[i][-1].get_name(): continue
-        #     self.io_mapping[i][-1].set_name( self.get_outputdir()+self.io_mapping[i][-1].get_name() )
 
         # get set of filenames from File objects that have already been mapped
         already_mapped_inputs = set(map(lambda x: x.get_name(),self.get_inputs(flatten=True)))
