@@ -40,7 +40,7 @@ eval `scramv1 runtime -sh`
 mv ../$PSET pset.py
 mv ../package.tar.gz package.tar.gz
 tar xzf package.tar.gz
-scram b -j10
+scram b
 
 # logging every 45 seconds gives ~100kb log file/3 hours
 dstat -cdngytlmrs --float --nocolor -T --output dsout.csv 45 >& /dev/null &
