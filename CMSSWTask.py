@@ -84,7 +84,8 @@ class CMSSWTask(Task):
 
         # Can keep calling update_mapping afterwards to re-query input files
         if not read_only:
-            self.update_mapping()
+            do_flush = kwargs.get("flush", False)
+            self.update_mapping(flush=do_flush)
 
     def get_taskdir(self):
         task_dir = "{0}/tasks/{1}/".format(self.get_basedir(),self.unique_name)
@@ -136,7 +137,6 @@ class CMSSWTask(Task):
         if already_mapped_outputs:
             nextidx = max(already_mapped_outputs)+1
         original_nextidx = nextidx+0
-        new_files = []
         # if dataset is "closed" and we already have some inputs, then
         # don't bother doing get_files() again (wastes a DBS query)
         if len(already_mapped_inputs) > 0 and not self.open_dataset:
@@ -317,6 +317,7 @@ if hasattr(process,"eventMaker"):
     process.eventMaker.CMS3tag = cms.string('{tag}')
     process.eventMaker.datasetName = cms.string('{dsname}')
 process.out.dropMetaData = cms.untracked.string("NONE")
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
             tag=self.tag, dsname=self.get_sample().get_datasetname(), gtag=self.global_tag
             ))
@@ -329,10 +330,12 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
     def get_task_summary(self):
         """
         returns a dictionary with mapping and condor job info/history:
+        must be JSON seralizable, so don't rely on repr for any classes!
         {
             <output_index>: {
-                "output_file_object": <file_obj>,
-                "input_file_objects": [<file_obj>, ...],
+                "output": [outfilename,outfilenevents],
+                "inputs": [[infilename,infilenevents], ...],
+                "output_exists": out.exists(),
                 "condor_jobs": [
                         {
                             "cluster_id": <cluster_id>,
@@ -365,8 +368,9 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
         for ins, out in self.get_io_mapping():
             index = out.get_index()
             d_summary[index] = {}
-            d_summary[index]["output"] = out
-            d_summary[index]["inputs"] = ins
+            d_summary[index]["output"] = [out.get_name(),out.get_nevents()]
+            d_summary[index]["output_exists"] = out.exists()
+            d_summary[index]["inputs"] = map(lambda x: [x.get_name(),x.get_nevents()], ins)
             submission_history = d_history.get(index,[])
             is_on_condor = False
             last_clusterid = -1
