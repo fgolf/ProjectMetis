@@ -93,7 +93,8 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=[]
                 raise RuntimeError("This selection pair is not a 2-tuple: {0}".format(str(sel_pair)))
             selection_str += " -const '{0}==\"{1}\"'".format(*sel_pair)
 
-    cmd = "condor_q {0} {1} -autoformat:t {2} {3}".format(user, cluster_id, columns_str,selection_str)
+    # Constraint ignores removed jobs ("X")
+    cmd = "condor_q {0} {1} -constraint 'JobStatus != 3' -autoformat:t {2} {3}".format(user, cluster_id, columns_str,selection_str)
     output = do_cmd(cmd)
 
     jobs = []
