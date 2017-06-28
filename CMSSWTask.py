@@ -21,8 +21,6 @@ class CMSSWTask(Task):
         ]
         """
         self.sample = kwargs.get("sample", None)
-
-        # self.create_inputs = kwargs.get("create_inputs", [])
         self.min_completion_fraction = kwargs.get("min_completion_fraction", 1.0)
         self.open_dataset = kwargs.get("open_dataset", False)
         self.events_per_output = kwargs.get("events_per_output", -1)
@@ -36,9 +34,7 @@ class CMSSWTask(Task):
         self.pset_args = kwargs.get("pset_args", "print")
         self.cmssw_version = kwargs.get("cmssw_version", None)
         self.tarfile = kwargs.get("output_name",None)
-
         read_only = kwargs.get("read_only",False)
-
 
         # If we didn't get an output directory, use the canonical format. E.g.,
         #   /hadoop/cms/store/user/namin/ProjectMetis/MET_Run2017A-PromptReco-v2_MINIAOD_CMS4_V00-00-03
@@ -59,18 +55,18 @@ class CMSSWTask(Task):
 
         # Some storage params
         self.prepared_inputs = False
-        self.made_taskdir = False
         self.job_submission_history = {}
 
         # Make a unique name from this task for pickling purposes
-        self.unique_name = "{0}_{1}_{2}".format(self.get_task_name(),self.sample.get_datasetname().replace("/","_")[1:],self.tag)
+        self.unique_name = kwargs.get("unique_name", "{0}_{1}_{2}".format(self.get_task_name(),self.sample.get_datasetname().replace("/","_")[1:],self.tag))
+
+        # Declare which variables we want to backup to avoid recalculation
+        self.to_backup = ["io_mapping","executable_path","pset_path", \
+                     "package_path","prepared_inputs", \
+                     "job_submission_history","global_tag"]
 
         # Pass all of the kwargs to the parent class
         super(self.__class__, self).__init__(**kwargs)
-
-        # Load from backup
-        if kwargs.get("load_from_backup",True):
-            self.load()
 
         # If we didn't get a globaltag, use the one from DBS
         # NOTE: This is declared as something to backup and placed after the
@@ -86,43 +82,9 @@ class CMSSWTask(Task):
             do_flush = kwargs.get("flush", False)
             self.update_mapping(flush=do_flush)
 
-    def get_taskdir(self):
-        task_dir = "{0}/tasks/{1}/".format(self.get_basedir(),self.unique_name)
-        if not self.made_taskdir:
-            Utils.do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
-            self.made_taskdir = True
-        return task_dir
 
     def get_job_submission_history(self):
         return self.job_submission_history
-
-    def backup(self):
-        """
-        Declare attributes to automatically back up (and later, load) here
-        """
-        to_backup = ["io_mapping","executable_path","pset_path", \
-                     "package_path","prepared_inputs","made_taskdir", \
-                     "job_submission_history","global_tag"]
-        fname = "{0}/backup.pkl".format(self.get_taskdir())
-        with open(fname,"w") as fhout:
-            d = {}
-            nvars = 0
-            for tob in to_backup:
-                if hasattr(self,tob): 
-                    d[tob] = getattr(self,tob)
-                    nvars += 1
-            pickle.dump(d, fhout)
-            self.logger.debug("Backed up {0} variables to {1}".format(nvars,fname))
-
-    def load(self):
-        fname = "{0}/backup.pkl".format(self.get_taskdir())
-        if os.path.exists(fname):
-            with open(fname,"r") as fhin:
-                data = pickle.load(fhin)
-                nvars = len(data.keys())
-                for key in data:
-                    setattr(self,key,data[key])
-                self.logger.debug("Loaded backup with {0} variables from {1}".format(nvars,fname))
 
     def update_mapping(self, flush=False):
         """

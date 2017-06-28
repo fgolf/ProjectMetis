@@ -1,6 +1,7 @@
 import os
 import traceback
 import logging
+import pickle
 
 from Constants import Constants
 from Utils import setup_logger
@@ -19,6 +20,12 @@ class Task(object):
         self.hash = self.get_task_hash()
         self.logger = logging.getLogger(setup_logger())
         self.basedir = os.environ.get("METIS_BASE",".")+"/"
+        if not hasattr(self, "unique_name"):
+            self.unique_name = self.hash
+        if not hasattr(self, "to_backup"):
+            self.to_backup = []
+
+        self.load()
 
     def __repr__(self):
         """
@@ -31,19 +38,55 @@ class Task(object):
         # # short version
         # return "<{}_{}>".format(self.get_task_name(), self.get_task_hash())
 
+
     def get_task_name(self):
         return self.__class__.__name__
 
     def get_basedir(self):
         return self.basedir
 
-
+    def get_taskdir(self):
+        task_dir = "{0}/tasks/{1}/".format(self.get_basedir(),self.unique_name)
+        if not os.path.exists(task_dir):
+            Utils.do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
+        return task_dir
 
     def get_task_hash(self):
+        """
+        if certain unique parameters exist, turn them into a hash
+        that should be unique
+        """
         buff = self.get_task_name()
-        for k,v in sorted(self.kwargs.items()):
-            buff += str(k)+str(v)
+        buff += self.kwargs.get("tag","")
+        sample = self.kwargs.get("sample",None)
+        if sample is not None: buff += sample.get_datasetname()
         return "%0.2X" % abs(hash(buff))
+
+    def backup(self):
+        """
+        Back up registered (in self.to_backup) variables
+        """
+        fname = "{0}/backup.pkl".format(self.get_taskdir())
+        with open(fname,"w") as fhout:
+            d = {}
+            nvars = 0
+            for tob in self.to_backup:
+                if hasattr(self,tob): 
+                    d[tob] = getattr(self,tob)
+                    nvars += 1
+            pickle.dump(d, fhout)
+            self.logger.debug("Backed up {0} variables to {1}".format(nvars,fname))
+
+    def load(self):
+        fname = "{0}/backup.pkl".format(self.get_taskdir())
+        if os.path.exists(fname):
+            with open(fname,"r") as fhin:
+                data = pickle.load(fhin)
+                nvars = len(data.keys())
+                for key in data:
+                    setattr(self,key,data[key])
+                self.logger.debug("Loaded backup with {0} variables from {1}".format(nvars,fname))
+
 
     def initialized(self):
         """
