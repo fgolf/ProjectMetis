@@ -68,6 +68,7 @@ if __name__ == "__main__":
                     tag = "CMS4_V00-00-03",
                     global_tag = "", # if global tag blank, one from DBS is used
                     pset = "pset_test.py",
+                    pset_args = "data=True prompt=True",
                     cmssw_version = cmsswver,
                     tarfile = tarfile,
             )
