@@ -31,10 +31,9 @@ class CMSSWTask(Task):
         self.output_dir = kwargs.get("output_dir",None)
         self.scram_arch = kwargs.get("scram_arch","slc6_amd64_gcc530")
         self.tag = kwargs.get("tag",None)
-
-        # TODO
         self.global_tag = kwargs.get("global_tag")
         self.pset = kwargs.get("pset", None)
+        self.pset_args = kwargs.get("pset_args", "print")
         self.cmssw_version = kwargs.get("cmssw_version", None)
         self.tarfile = kwargs.get("output_name",None)
 
@@ -282,9 +281,10 @@ class CMSSWTask(Task):
         scramarch = self.scram_arch
         nevts = -1
         expectedevents = out.get_nevents()
+        pset_args = self.pset_args
         executable = self.executable_path
         arguments = [ outdir, outname_noext, inputs_commasep,
-                index, pset_basename, cmssw_ver, scramarch, nevts, expectedevents ]
+                index, pset_basename, cmssw_ver, scramarch, nevts, expectedevents, pset_args ]
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
         package_full = os.path.abspath(self.package_path)
         return Utils.condor_submit(executable=executable, arguments=arguments,
