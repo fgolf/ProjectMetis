@@ -283,6 +283,8 @@ class CMSSWTask(Task):
         expectedevents = out.get_nevents()
         pset_args = self.pset_args
         executable = self.executable_path
+        # note that pset_args must be the last argument since it can have spaces
+        # check executables/condor_cmssw_exe.sh to see why
         arguments = [ outdir, outname_noext, inputs_commasep,
                 index, pset_basename, cmssw_ver, scramarch, nevts, expectedevents, pset_args ]
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
