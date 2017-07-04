@@ -4,7 +4,7 @@ import logging
 import pickle
 
 from Constants import Constants
-from Utils import setup_logger
+from Utils import setup_logger, do_cmd
 
 class Task(object):
 
@@ -48,7 +48,7 @@ class Task(object):
     def get_taskdir(self):
         task_dir = "{0}/tasks/{1}/".format(self.get_basedir(),self.unique_name)
         if not os.path.exists(task_dir):
-            Utils.do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
+            do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
         return task_dir
 
     def get_task_hash(self):

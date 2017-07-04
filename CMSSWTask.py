@@ -164,15 +164,11 @@ class CMSSWTask(Task):
         else:
             return frac >= self.min_completion_fraction
 
-    def process(self):
+    def run(self):
         """
         Main logic for looping through (inputs,output) pairs. In this
         case, this is where we submit, resubmit, etc. to condor
-        At the end, we call backup() for good measure!!
         """
-        # set up condor input if it's the first time submitting
-        self.prepare_inputs()
-
         condor_job_dicts = self.get_running_condor_jobs()
         condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
 
@@ -216,6 +212,17 @@ class CMSSWTask(Task):
                         self.logger.debug("Job {0} for ({1}) removed for excessive hold time".format(cluster_id, out))
                         Utils.condor_rm([cluster_id])
 
+    def process(self):
+        """
+        Prepare inputs
+        Execute main logic
+        Backup
+        """
+        # set up condor input if it's the first time submitting
+        if not self.prepared_inputs: self.prepare_inputs()
+
+        self.run()
+
         self.backup()
 
     def get_running_condor_jobs(self):
@@ -258,7 +265,6 @@ class CMSSWTask(Task):
 
 
     def prepare_inputs(self):
-        if self.prepared_inputs: return
 
         # need to take care of executable, tarfile, and pset
         self.executable_path = "{0}/executable.sh".format(self.get_taskdir())
@@ -353,6 +359,52 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
                 d_summary[index]["condor_jobs"].append(d_job)
 
         return d_summary
+
+    def get_legacy_metadata():
+        return {
+            "basedir": "/home/users/namin/2017/cms4/NtupleTools/AutoTwopler/", 
+            "cms3tag": "CMS4_V00-00-02", 
+            "cmsswver": "CMSSW_8_0_21", 
+            "dataset": "/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
+            "efact": 1.0, 
+            "finaldir": "/hadoop/cms/store/group/snt/run2_moriond17_cms4/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8_RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/V00-00-02/", 
+            "gtag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6", 
+            "ijob_to_miniaod": {
+                "1": [
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/0A0B93B5-43D0-E611-86C0-0242AC130003.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/20480E14-30D0-E611-89CE-002590D9D8B2.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/0EB0BB8B-3CD0-E611-A858-001E67346BA1.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/1636FC22-36D0-E611-BDD7-0CC47A537688.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/042843C1-3ED0-E611-A1F2-0CC47A57CB62.root"
+                ], 
+                "2": [
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/24030AFE-3AD0-E611-BD5A-0CC47A57CEB4.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/285CA2DD-3DD0-E611-99E8-0CC47A0AD704.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/26289230-40D0-E611-925B-0242AC130003.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/20DCCACE-29D0-E611-ABF3-00259075D72C.root", 
+                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/2C438AFF-3ED0-E611-BC84-0CC47A546E5E.root"
+                ], 
+            }, 
+            "ijob_to_nevents": {
+                "1": [
+                    265780, 
+                    109798
+                ], 
+                "2": [
+                    250840, 
+                    105284
+                ], 
+            }, 
+            "kfact": 1.0, 
+            "nevents_DAS": 2456040, 
+            "nevents_merged": 2175120, 
+            "nevents_unmerged": 2175120, 
+            "postprocessing": {}, 
+            "pset": "MCProduction2015_NoFilter_cfg.py", 
+            "sparms": [], 
+            "xsec": 0.0092
+        }
+
 
 
 
