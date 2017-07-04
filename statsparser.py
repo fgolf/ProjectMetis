@@ -30,6 +30,7 @@ for dsname in summary.keys():
         nevents = sum(innevents)
         print "[{0}] Job {1} is not done. Retried {2} times.".format(dsname, iout, retries)
         print "   --> {0} inputs with a total of {1} events".format(len(inputs),nevents)
+
         if retries >= 1:
             print "   --> Previous condor logs:"
             for ijob in range(len(condor_jobs)-1):

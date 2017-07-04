@@ -7,6 +7,7 @@ from CMSSWTask import CMSSWTask
 if __name__ == "__main__":
 
     dataset_names = [
+
             # "/MET/Run2017A-PromptReco-v3/MINIAOD",
             # "/DoubleEG/Run2017A-PromptReco-v2/MINIAOD",
             # "/DoubleEG/Run2017A-PromptReco-v3/MINIAOD",
@@ -32,6 +33,7 @@ if __name__ == "__main__":
             # "/SinglePhoton/Run2017A-PromptReco-v1/MINIAOD",
             # "/SinglePhoton/Run2017A-PromptReco-v2/MINIAOD",
             # "/SinglePhoton/Run2017A-PromptReco-v3/MINIAOD",
+
              "/MuonEG/Run2017B-PromptReco-v1/MINIAOD",
              "/SingleElectron/Run2017B-PromptReco-v1/MINIAOD",
              "/MET/Run2017B-PromptReco-v1/MINIAOD",
