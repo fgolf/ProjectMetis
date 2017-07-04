@@ -189,7 +189,7 @@ class DBSSample(Sample):
 class DirectorySample(Sample):
     """
     Sample which just does a directory listing to get files
-    Requires a `location` to do an ls and a `dataset`,`tag`
+    Requires a `location` to do an ls and a `dataset`
     for naming purposes
     Optionally takes `globber` (defaulting to *.root) to select which
     files inside the `location` get picked up with get_files()
@@ -197,7 +197,7 @@ class DirectorySample(Sample):
 
     def __init__(self, **kwargs):
         # Handle whatever kwargs we want here
-        needed_params = ["dataset", "location", "tag"]
+        needed_params = ["dataset", "location"]
         if any(x not in kwargs for x in needed_params):
             raise Exception("Need parameters: {0}".format(",".join(needed_params)))
 

@@ -21,6 +21,7 @@ echo "INPUTFILENAMES: $INPUTFILENAMES"
 echo "IFILE: $IFILE"
 echo "PSET: $PSET"
 echo "CMSSWVERSION: $CMSSWVERSION"
+echo "SCRAMARCH: $SCRAMARCH"
 echo "NEVTS: $NEVTS"
 echo "EXPECTEDNEVTS: $EXPECTEDNEVTS"
 echo "PSETARGS: $PSETARGS"
@@ -64,12 +65,31 @@ echo -e "\n--- begin running ---\n" #                           <----- section d
 
 cmsRun pset.py ${PSETARGS}
 
+# Add some metadata
+# Right now, total/negative event counts, but obviously extensible
+python << EOL
+import ROOT as r
+fin = r.TFile("${OUTPUTNAME}.root","update")
+t = fin.Get("Events")
+t.SetBranchStatus("*",0)
+t.SetBranchStatus("*genpsweight*",1)
+t.GetUserInfo().Clear()
+nevts = t.GetEntries()
+nevts_neg = t.GetEntries("genps_weight < 0")
+evts = r.TParameter(int)("nevts", nevts)
+evts_neg = r.TParameter(int)("nevts_neg", nevts_neg)
+print "Writing metadata. Nevents = {0} ({1} negative)".format(nevts, nevts_neg)
+t.GetUserInfo().Add(evts)
+t.GetUserInfo().Add(evts_neg)
+t.Write("",r.TObject.kOverwrite)
+t.GetUserInfo().Print()
+EOL
+
 # Rigorous sweeproot which checks ALL branches for ALL events.
 # If GetEntry() returns -1, then there was an I/O problem, so we will delete it
 python << EOL
 import ROOT as r
 import os
-
 foundBad = False
 try:
     f1 = r.TFile("${OUTPUTNAME}.root")
@@ -86,7 +106,6 @@ try:
             print "[RSR] found bad event %i" % i
             break
 except: foundBad = True
-
 if foundBad:
     print "[RSR] removing output file because it does not deserve to live"
     os.system("rm ${OUTPUTNAME}.root")
