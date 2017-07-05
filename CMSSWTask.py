@@ -2,6 +2,7 @@ import commands
 import os
 import time
 import pickle
+import json
 
 from Constants import Constants
 from Task import Task
@@ -159,7 +160,7 @@ class CMSSWTask(Task):
         Return bool for completion, or fraction if
         return_fraction specified as True
         """
-        bools = map(lambda output: o.get_status() == Constants.DONE, self.get_outputs())
+        bools = map(lambda output: output.get_status() == Constants.DONE, self.get_outputs())
         frac = 1.0*sum(bools)/len(bools)
         if return_fraction:
             return frac
@@ -184,7 +185,7 @@ class CMSSWTask(Task):
             done = out.exists() and not on_condor
             if done:
                 out.set_status(Constants.DONE)
-                # self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
+                self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
                 # If MC and file is done, calculate negative events to use later for metadata
                 # NOTE Can probably speed this up if it's not an NLO sample
                 if not self.is_data:
@@ -237,7 +238,20 @@ class CMSSWTask(Task):
 
         self.run()
 
+        if self.complete():
+            self.finalize()
+
+
         self.backup()
+
+    def finalize(self):
+        """
+        Take care of task-dependent things after
+        jobs are completed
+        """
+        d_metadata = self.get_legacy_metadata()
+        self.write_metadata(d_metadata)
+        self.update_dis(d_metadata)
 
     def get_running_condor_jobs(self):
         """
@@ -384,7 +398,7 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
             d_metadata["ijob_to_miniaod"][out.get_index()] = map(lambda x: x.get_name(), ins)
             d_metadata["ijob_to_nevents"][out.get_index()] = [out.get_nevents(), out.get_nevents_positive()]
             done_nevents += out.get_nevents()
-        d_metadata["basedir"] = self.get_basedir()
+        d_metadata["basedir"] = os.path.abspath(self.get_basedir())
         d_metadata["tag"] = self.tag
         d_metadata["dataset"] = self.get_sample().get_datasetname()
         d_metadata["gtag"] = self.global_tag
@@ -396,17 +410,24 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
         d_metadata["nevents_DAS"] = self.get_sample().get_nevents()
         d_metadata["nevents_merged"] = done_nevents
         d_metadata["finaldir"] = self.get_outputdir()
-        # NOTE make these parameters of self. eventually?
-        # They're not really needed, except maybe sparms
-        # but NOTE that we should remove dependency of fastsim
-        # on having the stupid vector of strings of smarm names
-        # just pull what we have in miniaod
-        d_metadata["efact"] = self.kwargs.get("efact", 1)
-        d_metadata["kfact"] = self.kwargs.get("kfact", 1)
-        d_metadata["sparms"] = self.kwargs.get("sparms", [])
-        d_metadata["xsec"] = self.kwargs.get("xsec", 1)
+        d_metadata["efact"] = self.sample.info["efact"]
+        d_metadata["kfact"] = self.sample.info["kfact"]
+        d_metadata["xsec"] = self.sample.info["xsec"]
         return d_metadata
 
+    def write_metadata(self, d_metadata):
+        metadata_file = d_metadata["finaldir"]+"/metadata.json"
+        with open(metadata_file, "w") as fhout:
+            json.dump(d_metadata, fhout, sort_keys = True, indent = 4)
+        self.logger.debug("Dumped metadata to {0}".format(metadata_file))
+
+    def update_dis(self, d_metadata):
+        self.sample.info["nevents_in"] = d_metadata["nevents_DAS"]
+        self.sample.info["nevents"] = d_metadata["nevents_merged"]
+        self.sample.info["location"] = d_metadata["finaldir"]
+        self.sample.info["tag"] = d_metadata["tag"]
+        self.sample.info["gtag"] = d_metadata["gtag"]
+        self.sample.do_update_dis()
 
 if __name__ == "__main__":
     pass
