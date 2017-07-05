@@ -34,6 +34,8 @@ class CMSSWTask(Task):
         self.pset_args = kwargs.get("pset_args", "print")
         self.cmssw_version = kwargs.get("cmssw_version", None)
         self.tarfile = kwargs.get("output_name",None)
+        self.is_data = kwargs.get("is_data",False)
+        self.kwargs = kwargs
         read_only = kwargs.get("read_only",False)
 
         # If we didn't get an output directory, use the canonical format. E.g.,
@@ -173,15 +175,22 @@ class CMSSWTask(Task):
         condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
 
         # main loop over input-output map
-        for ins, out in self.io_mapping:
+        NMAX_FILES = self.kwargs.get("nmax_output_files", -1) # FIXME get rid of this when done
+        for ins, out in self.io_mapping[:NMAX_FILES]:
             # force a recheck to see if file exists or not
             # in case we delete it by hand to regenerate
-            out.update() 
+            out.recheck() 
             index = out.get_index() # "merged_ntuple_42.root" --> 42
             on_condor = index in condor_job_indices
             done = out.exists() and not on_condor
             if done:
+                out.set_status(Constants.DONE)
                 self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
+                # If MC and file is done, calculate negative events to use later for metadata
+                # NOTE Can probably speed this up if it's not an NLO sample
+                if not self.is_data:
+                    self.logger.debug("Calculating negative events for this file")
+                    out.get_nevents_negative()
                 continue
 
             if not on_condor:
@@ -360,52 +369,38 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
 
         return d_summary
 
-    def get_legacy_metadata():
-        return {
-            "basedir": "/home/users/namin/2017/cms4/NtupleTools/AutoTwopler/", 
-            "cms3tag": "CMS4_V00-00-02", 
-            "cmsswver": "CMSSW_8_0_21", 
-            "dataset": "/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
-            "efact": 1.0, 
-            "finaldir": "/hadoop/cms/store/group/snt/run2_moriond17_cms4/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8_RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/V00-00-02/", 
-            "gtag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6", 
-            "ijob_to_miniaod": {
-                "1": [
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/0A0B93B5-43D0-E611-86C0-0242AC130003.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/20480E14-30D0-E611-89CE-002590D9D8B2.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/0EB0BB8B-3CD0-E611-A858-001E67346BA1.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/1636FC22-36D0-E611-BDD7-0CC47A537688.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/042843C1-3ED0-E611-A1F2-0CC47A57CB62.root"
-                ], 
-                "2": [
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/24030AFE-3AD0-E611-BD5A-0CC47A57CEB4.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/285CA2DD-3DD0-E611-99E8-0CC47A0AD704.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/26289230-40D0-E611-925B-0242AC130003.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/20DCCACE-29D0-E611-ABF3-00259075D72C.root", 
-                    "/store/mc/RunIISummer16MiniAODv2/TTTT_TuneCUETP8M2T4_13TeV-amcatnlo-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/70000/2C438AFF-3ED0-E611-BC84-0CC47A546E5E.root"
-                ], 
-            }, 
-            "ijob_to_nevents": {
-                "1": [
-                    265780, 
-                    109798
-                ], 
-                "2": [
-                    250840, 
-                    105284
-                ], 
-            }, 
-            "kfact": 1.0, 
-            "nevents_DAS": 2456040, 
-            "nevents_merged": 2175120, 
-            "nevents_unmerged": 2175120, 
-            "postprocessing": {}, 
-            "pset": "MCProduction2015_NoFilter_cfg.py", 
-            "sparms": [], 
-            "xsec": 0.0092
-        }
-
-
+    def get_legacy_metadata(self):
+        d_metadata = {}
+        d_metadata["ijob_to_miniaod"] = {}
+        d_metadata["ijob_to_nevents"] = {}
+        done_nevents = 0
+        for ins, out in self.get_io_mapping()[:6]:
+            if out.get_status() != Constants.DONE: continue
+            d_metadata["ijob_to_miniaod"][out.get_index()] = map(lambda x: x.get_name(), ins)
+            d_metadata["ijob_to_nevents"][out.get_index()] = [out.get_nevents(), out.get_nevents_positive()]
+            done_nevents += out.get_nevents()
+        d_metadata["basedir"] = self.get_basedir()
+        d_metadata["tag"] = self.tag
+        d_metadata["dataset"] = self.get_sample().get_datasetname()
+        d_metadata["gtag"] = self.global_tag
+        d_metadata["pset"] = self.pset
+        d_metadata["pset_args"] = self.pset_args
+        d_metadata["cmsswver"] = self.cmssw_version
+        # NOTE this makes a DIS query every single time, cache it somehow
+        # for closed datasets? or only make metadata once at the end?
+        d_metadata["nevents_DAS"] = self.get_sample().get_nevents()
+        d_metadata["nevents_merged"] = done_nevents
+        d_metadata["finaldir"] = self.get_outputdir()
+        # NOTE make these parameters of self. eventually?
+        # They're not really needed, except maybe sparms
+        # but NOTE that we should remove dependency of fastsim
+        # on having the stupid vector of strings of smarm names
+        # just pull what we have in miniaod
+        d_metadata["efact"] = self.kwargs.get("efact", 1)
+        d_metadata["kfact"] = self.kwargs.get("kfact", 1)
+        d_metadata["sparms"] = self.kwargs.get("sparms", [])
+        d_metadata["xsec"] = self.kwargs.get("xsec", 1)
+        return d_metadata
 
 
 if __name__ == "__main__":
