@@ -1,5 +1,6 @@
 import logging
 import glob
+import time
 
 import scripts.dis_client as dis
 
@@ -18,9 +19,9 @@ class Sample(object):
                 "tier": kwargs.get("tier", "CMS3"),
                 "dataset": kwargs.get("dataset", None),
                 "gtag": kwargs.get("gtag", None),
-                "kfact": kwargs.get("kfact", None),
-                "xsec": kwargs.get("xsec", None),
-                "efilt": kwargs.get("efilt", None),
+                "kfact": kwargs.get("kfact", 1.),
+                "xsec": kwargs.get("xsec", 1.),
+                "efact": kwargs.get("efact", 1.),
                 "filtname": kwargs.get("filtname", None),
                 "analysis": kwargs.get("analysis", None),
                 "tag": kwargs.get("tag", None),
@@ -94,7 +95,7 @@ class Sample(object):
             self.info["kfact"]     = response[0]["kfactor"]
             self.info["xsec"]      = response[0]["xsec"]
             self.info["filtname"]  = response[0]["filter_name"]
-            self.info["efilt"]     = response[0]["filter_eff"]
+            self.info["efact"]     = response[0]["filter_eff"]
             self.info["analysis"]  = response[0]["analysis"]
             self.info["tag"]       = response[0].get("tag", response[0].get("cms3tag"))
             self.info["version"]   = response[0].get("version", "v1.0")
@@ -111,6 +112,29 @@ class Sample(object):
         except:
             return False
             
+    def do_update_dis(self):
+        query_str = "dataset_name={},sample_type={},cms3tag={},gtag={},location={},nevents_in={},nevents_out={},xsec={},kfactor={},filter_eff={},timestamp={}".format(
+           self.info["dataset"], self.info["tier"], self.info["tag"], self.info["gtag"], \
+           self.info["location"], self.info["nevents_in"], self.info["nevents"], \
+           self.info["xsec"], self.info["kfact"], self.info["efact"], int(time.time())
+           )
+
+        response = {}
+        try:
+            succeeded = False
+            response = dis.query(query_str, typ='update_snt')
+            response = response["response"]["payload"]
+            if "updated" in response and str(response["updated"]).lower() == "true": succeeded = True
+            print response
+            self.logger.debug("updated DIS")
+        except: pass
+
+        if not succeeded:
+            self.logger.debug("WARNING: failed to update sample using DIS with query_str: {}".format(query_str))
+            self.logger.debug("WARNING: got response: {}".format(response))
+
+        return succeeded
+
     def check_params_for_dis_query(self):
         if "dataset" not in self.info: return (False, "dataset")
         if "type" not in self.info: return (False, "type")
@@ -158,7 +182,7 @@ class DBSSample(Sample):
 
         self.info["files"] = fileobjs
         self.info["nevts"] = sum(fo.get_nevents() for fo in fileobjs)
-        self.info["tier"] = self.info["dataset"].rsplit("/",1)[-1]
+        # self.info["tier"] = self.info["dataset"].rsplit("/",1)[-1]
 
 
     def get_nevents(self):
