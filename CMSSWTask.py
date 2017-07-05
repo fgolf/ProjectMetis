@@ -175,8 +175,7 @@ class CMSSWTask(Task):
         condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
 
         # main loop over input-output map
-        NMAX_FILES = self.kwargs.get("nmax_output_files", -1) # FIXME get rid of this when done
-        for ins, out in self.io_mapping[:NMAX_FILES]:
+        for ins, out in self.io_mapping:
             # force a recheck to see if file exists or not
             # in case we delete it by hand to regenerate
             out.recheck() 
@@ -185,7 +184,7 @@ class CMSSWTask(Task):
             done = out.exists() and not on_condor
             if done:
                 out.set_status(Constants.DONE)
-                self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
+                # self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
                 # If MC and file is done, calculate negative events to use later for metadata
                 # NOTE Can probably speed this up if it's not an NLO sample
                 if not self.is_data:
@@ -212,8 +211,14 @@ class CMSSWTask(Task):
 
                 if running:
                     self.logger.debug("Job {0} for ({1}) running for {2:.1f} hrs".format(cluster_id, out, hours_since))
+
+                    if hours_since > 24.0:
+                        self.logger.debug("Job {0} for ({1}) removed for running for more than a day!".format(cluster_id, out))
+                        Utils.condor_rm([cluster_id])
+
                 elif idle:
                     self.logger.debug("Job {0} for ({1}) idle for {2:.1f} hrs".format(cluster_id, out, hours_since))
+
                 elif held:
                     self.logger.debug("Job {0} for ({1}) held for {2:.1f} hrs with hold reason: {3}".format(cluster_id, out, hours_since, this_job_dict["HoldReason"]))
 
@@ -374,7 +379,7 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
         d_metadata["ijob_to_miniaod"] = {}
         d_metadata["ijob_to_nevents"] = {}
         done_nevents = 0
-        for ins, out in self.get_io_mapping()[:6]:
+        for ins, out in self.get_io_mapping():
             if out.get_status() != Constants.DONE: continue
             d_metadata["ijob_to_miniaod"][out.get_index()] = map(lambda x: x.get_name(), ins)
             d_metadata["ijob_to_nevents"][out.get_index()] = [out.get_nevents(), out.get_nevents_positive()]
