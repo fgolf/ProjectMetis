@@ -4,6 +4,9 @@ import time
 from Constants import Constants
 import Utils
 
+def is_data_by_filename(fname):
+    return "Run2017" in fname
+
 class File(object):
 
     def __init__(self, name, **kwargs):
@@ -103,6 +106,10 @@ class EventsFile(File):
         return self.nevents - self.get_nevents_negative()
 
     def get_nevents_negative(self):
+        # some speedups
+        if is_data_by_filename(self.name): return 0
+        # NOTE what about LO samples?
+
         if not self.have_calculated_nevents_negative:
             self.calculate_nevents_negative()
             self.have_calculated_nevents_negative = True
