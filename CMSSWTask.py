@@ -146,7 +146,7 @@ class CMSSWTask(Task):
         """
         Return list of completed output objects
         """
-        return [o for o in self.get_outputs(flatten=True) if o.exists()]
+        return [o for o in self.get_outputs() if o.get_status() == Constants.DONE]
 
     def get_outputs(self):
         """
@@ -159,7 +159,7 @@ class CMSSWTask(Task):
         Return bool for completion, or fraction if
         return_fraction specified as True
         """
-        bools = map(lambda output: output.exists(), self.get_outputs())
+        bools = map(lambda output: o.get_status() == Constants.DONE, self.get_outputs())
         frac = 1.0*sum(bools)/len(bools)
         if return_fraction:
             return frac
