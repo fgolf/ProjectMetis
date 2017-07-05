@@ -64,17 +64,17 @@ class File(object):
         """
         Important NOTE:
         Below if statement basically caches the existence of
-        this file if True. Call the update() method to re-check.
+        this file if True. Call the recheck() method to re-check.
         """
         if self.file_exists in [None, False]:
             self.file_exists = os.path.exists(self.name)
         return self.file_exists
     
-    def update(self):
+    def recheck(self):
         self.file_exists = self.fake or os.path.exists(self.name)
 
     def set_status(self, status):
-        self.update()
+        self.recheck()
         self.status = status
 
     def get_status(self):
