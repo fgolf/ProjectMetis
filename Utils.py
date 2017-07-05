@@ -137,7 +137,7 @@ def condor_submit(**kwargs):
     params["proxy"] = "/tmp/x509up_u{0}".format(os.getuid())
     params["timestamp"] = get_timestamp()
 
-    if kwargs.get("use_xrootd", False): params["sites"] = kwargs.get("sites","T2_US_UCSD,T2_US_Wisconsin,T2_US_Florida,T2_US_Purdue,T2_US_Nebraska,T2_US_Caltech")
+    if kwargs.get("use_xrootd", False): params["sites"] = kwargs.get("sites","UAF,UCSB,T2_US_UCSD,T2_US_Wisconsin,T2_US_Florida,T2_US_Purdue,T2_US_Nebraska,T2_US_Caltech")
     else: params["sites"] = kwargs.get("sites","T2_US_UCSD,UAF,UCSB")
 
     params["extra"] = ""
