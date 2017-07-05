@@ -73,6 +73,7 @@ if __name__ == "__main__":
                     pset_args = "data=True prompt=True",
                     cmssw_version = cmsswver,
                     tarfile = tarfile,
+                    is_data = True,
             )
             
             # do pretty much everything
