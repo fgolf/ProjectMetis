@@ -41,8 +41,8 @@ if __name__ == "__main__":
              "/SingleMuon/Run2017B-PromptReco-v1/MINIAOD",
              "/DoubleMuon/Run2017B-PromptReco-v1/MINIAOD",
              "/JetHT/Run2017B-PromptReco-v1/MINIAOD",
-             "/HTMHT/Run2017B-PromptReco-v1/MINIAOD",
              "/DoubleEG/Run2017B-PromptReco-v1/MINIAOD",
+             "/HTMHT/Run2017B-PromptReco-v1/MINIAOD",
 
             ]
 
@@ -63,8 +63,8 @@ if __name__ == "__main__":
             task = CMSSWTask(
                     sample = DBSSample(dataset=dsname),
                     open_dataset = True,
-                    # every 20 iterations, "flush" remaining files
-                    flush = (i%20==0), 
+                    # every 48 iterations, "flush" remaining files
+                    flush = (i%48==0), 
                     events_per_output = 450e3,
                     output_name = "merged_ntuple.root",
                     tag = "CMS4_V00-00-03",
@@ -78,6 +78,9 @@ if __name__ == "__main__":
             
             # do pretty much everything
             task.process()
+
+            # print task.get_outputdir()
+            # print task.get_legacy_metadata()
 
             # save some information for analysis later
             summary = task.get_task_summary()
