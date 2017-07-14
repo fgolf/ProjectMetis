@@ -31,6 +31,7 @@ class CMSSWTask(Task):
         self.scram_arch = kwargs.get("scram_arch","slc6_amd64_gcc530")
         self.tag = kwargs.get("tag",None)
         self.global_tag = kwargs.get("global_tag")
+        self.input_executable = kwargs.get("executable", "executables/condor_cmssw_exe.sh")
         self.pset = kwargs.get("pset", None)
         self.pset_args = kwargs.get("pset_args", "print")
         self.cmssw_version = kwargs.get("cmssw_version", None)
@@ -46,14 +47,6 @@ class CMSSWTask(Task):
         hadoop_user = os.environ.get("USER") # NOTE, might be different for some weird folks
         self.output_dir = "/hadoop/cms/store/user/{0}/{1}/{2}_{3}/".format(hadoop_user,special_dir,self.sample.get_datasetname().replace("/","_")[1:],self.tag)
 
-        # Absolutely require some parameters unless we're just pulling information
-        if not self.tag:
-            raise Exception("Need to specify a tag to identify the processing!")
-        if not self.sample:
-            raise Exception("Need to specify a sample!")
-        if not read_only:
-            if not self.tarfile or not self.cmssw_version or not self.pset:
-                raise Exception("Need tarfile, cmssw_version, and pset to do stuff!")
 
         # I/O mapping (many-to-one as described above)
         self.io_mapping = []
@@ -71,7 +64,7 @@ class CMSSWTask(Task):
                      "job_submission_history","global_tag"]
 
         # Pass all of the kwargs to the parent class
-        super(self.__class__, self).__init__(**kwargs)
+        super(CMSSWTask, self).__init__(**kwargs)
 
         # If we didn't get a globaltag, use the one from DBS
         # NOTE: This is declared as something to backup and placed after the
@@ -305,7 +298,7 @@ class CMSSWTask(Task):
         self.package_path = "{0}/package.tar.gz".format(self.get_taskdir())
 
         # take care of executable. easy.
-        Utils.do_cmd("cp {0}/executables/condor_cmssw_exe.sh {1}".format(self.get_basedir(),self.executable_path))
+        Utils.do_cmd("cp {0} {1}".format(self.input_executable,self.executable_path))
 
         # add some stuff to end of pset (only tags and dataset name.
         # rest is done within the job in the executable)
