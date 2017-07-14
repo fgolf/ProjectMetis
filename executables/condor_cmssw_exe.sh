@@ -71,8 +71,6 @@ python << EOL
 import ROOT as r
 fin = r.TFile("${OUTPUTNAME}.root","update")
 t = fin.Get("Events")
-t.SetBranchStatus("*",0)
-t.SetBranchStatus("*genpsweight*",1)
 t.GetUserInfo().Clear()
 nevts = t.GetEntries()
 nevts_neg = t.GetEntries("genps_weight < 0")
@@ -97,7 +95,7 @@ try:
     nevts = t.GetEntries()
     expectednevts = ${EXPECTEDNEVTS}
     print "[RSR] ntuple has %i events and expected %i" % (t.GetEntries(), expectednevts)
-    if int(t.GetEntries()) != int(expectednevts):
+    if int(expectednevts) > 0 and int(t.GetEntries()) != int(expectednevts):
         print "[RSR] nevents mismatch"
         foundBad = True
     for i in range(0,t.GetEntries(),1):
