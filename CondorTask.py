@@ -323,29 +323,34 @@ class CondorTask(Task):
         d_history = self.get_job_submission_history()
             
         # map from output index to summary dictionaries
-        d_summary = {}
+        d_jobs = {}
         for ins, out in self.get_io_mapping():
             index = out.get_index()
-            d_summary[index] = {}
-            d_summary[index]["output"] = [out.get_name(),out.get_nevents()]
-            d_summary[index]["output_exists"] = out.exists()
-            d_summary[index]["inputs"] = map(lambda x: [x.get_name(),x.get_nevents()], ins)
+            d_jobs[index] = {}
+            d_jobs[index]["output"] = [out.get_name(),out.get_nevents()]
+            d_jobs[index]["output_exists"] = out.exists()
+            d_jobs[index]["inputs"] = map(lambda x: [x.get_name(),x.get_nevents()], ins)
             submission_history = d_history.get(index,[])
             is_on_condor = False
             last_clusterid = -1
             if len(submission_history) > 0:
                 last_clusterid = submission_history[-1]
                 is_on_condor = last_clusterid in d_oncondor
-            d_summary[index]["current_job"] = d_oncondor.get(last_clusterid,{})
-            d_summary[index]["is_on_condor"] = is_on_condor
-            d_summary[index]["condor_jobs"] = []
+            d_jobs[index]["current_job"] = d_oncondor.get(last_clusterid,{})
+            d_jobs[index]["is_on_condor"] = is_on_condor
+            d_jobs[index]["condor_jobs"] = []
             for clusterid in submission_history:
                 d_job = {
                         "cluster_id": clusterid,
                         "logfile_err": "{0}/1e.{1}.0.{2}".format(logdir_full,clusterid,"err"),
                         "logfile_out": "{0}/1e.{1}.0.{2}".format(logdir_full,clusterid,"out"),
                         }
-                d_summary[index]["condor_jobs"].append(d_job)
+                d_jobs[index]["condor_jobs"].append(d_job)
+
+        d_summary = {
+                "jobs": d_jobs,
+                "queried_nevents": self.get_sample().get_nevents(),
+                }
 
         return d_summary
 
