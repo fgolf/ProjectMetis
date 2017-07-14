@@ -22,8 +22,8 @@ class Task(object):
         self.basedir = os.environ.get("METIS_BASE",".")+"/"
         if not hasattr(self, "unique_name"):
             self.unique_name = self.hash
-        if not hasattr(self, "to_backup"):
-            self.to_backup = []
+        # if not hasattr(self, "to_backup"):
+        #     self.to_backup = []
 
         self.load()
 
@@ -62,15 +62,22 @@ class Task(object):
         if sample is not None: buff += sample.get_datasetname()
         return "%0.2X" % abs(hash(buff))
 
+    def info_to_backup(self):
+        """
+        Up to subclasses to overload this and declare what 
+        attributes to backup and load from pickle file
+        """
+        return []
+        
     def backup(self):
         """
-        Back up registered (in self.to_backup) variables
+        Back up registered (in self.info_to_backup()) variables
         """
         fname = "{0}/backup.pkl".format(self.get_taskdir())
         with open(fname,"w") as fhout:
             d = {}
             nvars = 0
-            for tob in self.to_backup:
+            for tob in self.info_to_backup():
                 if hasattr(self,tob): 
                     d[tob] = getattr(self,tob)
                     nvars += 1
