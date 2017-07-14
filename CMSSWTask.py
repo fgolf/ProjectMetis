@@ -36,13 +36,15 @@ class CMSSWTask(Task):
         self.cmssw_version = kwargs.get("cmssw_version", None)
         self.tarfile = kwargs.get("output_name",None)
         self.is_data = kwargs.get("is_data",False)
+        self.check_expectedevents = kwargs.get("check_expectedevents",True)
         self.kwargs = kwargs
         read_only = kwargs.get("read_only",False)
+        special_dir = kwargs.get("special_dir", "ProjectMetis")
 
         # If we didn't get an output directory, use the canonical format. E.g.,
         #   /hadoop/cms/store/user/namin/ProjectMetis/MET_Run2017A-PromptReco-v2_MINIAOD_CMS4_V00-00-03
         hadoop_user = os.environ.get("USER") # NOTE, might be different for some weird folks
-        self.output_dir = "/hadoop/cms/store/user/{0}/ProjectMetis/{1}_{2}/".format(hadoop_user,self.sample.get_datasetname().replace("/","_")[1:],self.tag)
+        self.output_dir = "/hadoop/cms/store/user/{0}/{1}/{2}_{3}/".format(hadoop_user,special_dir,self.sample.get_datasetname().replace("/","_")[1:],self.tag)
 
         # Absolutely require some parameters unless we're just pulling information
         if not self.tag:
@@ -277,7 +279,10 @@ class CMSSWTask(Task):
         cmssw_ver = self.cmssw_version
         scramarch = self.scram_arch
         nevts = -1
-        expectedevents = out.get_nevents()
+        if self.check_expectedevents:
+            expectedevents = out.get_nevents()
+        else:
+            expectedevents = -1
         pset_args = self.pset_args
         executable = self.executable_path
         # note that pset_args must be the last argument since it can have spaces
@@ -422,6 +427,7 @@ process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
         self.logger.debug("Dumped metadata to {0}".format(metadata_file))
 
     def update_dis(self, d_metadata):
+        self.logger.debug("Updating DIS")
         self.sample.info["nevents_in"] = d_metadata["nevents_DAS"]
         self.sample.info["nevents"] = d_metadata["nevents_merged"]
         self.sample.info["location"] = d_metadata["finaldir"]

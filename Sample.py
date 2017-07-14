@@ -125,7 +125,6 @@ class Sample(object):
             response = dis.query(query_str, typ='update_snt')
             response = response["response"]["payload"]
             if "updated" in response and str(response["updated"]).lower() == "true": succeeded = True
-            print response
             self.logger.debug("updated DIS")
         except: pass
 
@@ -226,6 +225,7 @@ class DirectorySample(Sample):
             raise Exception("Need parameters: {0}".format(",".join(needed_params)))
 
         self.globber = kwargs.get("globber","*.root")
+        self.use_xrootd = kwargs.get("use_xrootd",False)
 
         # Pass all of the kwargs to the parent class
         super(self.__class__, self).__init__(**kwargs)
@@ -233,7 +233,10 @@ class DirectorySample(Sample):
     def get_files(self):
         if self.info.get("files",None): return self.info["files"]
         filepaths = glob.glob(self.info["location"] + "/" + self.globber)
+        if self.use_xrootd:
+            filepaths = [fp.replace("/hadoop/cms","") for fp in filepaths]
         self.info["files"] = map(EventsFile,filepaths)
+
         return self.info["files"]
 
     def get_nevents(self):
