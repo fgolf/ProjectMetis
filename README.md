@@ -45,7 +45,7 @@ To submit CMS4 jobs on a dataset, literally just need the dataset name, a pset, 
 import time
 from pprint import pprint
 from Sample import DBSSample
-from CMSSWTaskSmall import CMSSWTask
+from CMSSWTask import CMSSWTask
 
 if __name__ == "__main__":
 
