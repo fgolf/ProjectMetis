@@ -106,6 +106,7 @@ class EventsFile(File):
         return self.nevents - self.get_nevents_negative()
 
     def get_nevents_negative(self):
+        if self.fake: return self.nevents_negative
         # some speedups
         if is_data_by_filename(self.name): return 0
         # NOTE what about LO samples?

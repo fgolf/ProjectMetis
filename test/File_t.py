@@ -31,7 +31,7 @@ class EventsFileTest(unittest.TestCase):
         self.assertEqual(ef.get_status(), Constants.INVALID)
 
     def test_nevents(self):
-        ef = EventsFile("does_not_exist.root", status=Constants.VALID, nevents=100, nevents_negative=10)
+        ef = EventsFile("does_not_exist.root", status=Constants.VALID, nevents=100, nevents_negative=10, fake=True)
         self.assertEqual(ef.get_nevents(), 100)
         self.assertEqual(ef.get_nevents_positive(), 90)
         self.assertEqual(ef.get_nevents_negative(), 10)
