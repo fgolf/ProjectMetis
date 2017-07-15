@@ -1,6 +1,6 @@
 import Utils
 from pprint import pprint
-from CMSSWTaskSmall import CMSSWTask
+from CMSSWTask import CMSSWTask
 from Sample import DirectorySample
 
 lhe = CMSSWTask(
