@@ -53,5 +53,5 @@ miniaod = CMSSWTask(
 workflow = [lhe, raw, aod, miniaod]
 for part in workflow:
     part.process()
-    print part.get_task_summary()
+    # print part.get_task_summary()
 

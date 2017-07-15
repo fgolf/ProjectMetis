@@ -64,6 +64,8 @@ if [ "$INPUTFILENAMES" != "dummyfile" ]; then
     echo "])" >> pset.py
 fi
 if [ "$FIRSTEVT" -ge 0 ]; then
+    # events to skip, event number to assign to first event
+    echo "process.source.skipEvents = cms.untracked.uint32(max(${FIRSTEVT}-1,0))" >> pset.py
     echo "process.source.firstEvent = cms.untracked.uint32(${FIRSTEVT})" >> pset.py
 fi
 
