@@ -81,9 +81,9 @@ if __name__ == "__main__":
         # scripts/technology.
         pprint(task.get_task_summary())
 
-    # 1 hr power nap so we wake up refreshed
-    # and ready to process some more data
-    time.sleep(1.*3600)
+        # 1 hr power nap so we wake up refreshed
+        # and ready to process some more data
+        time.sleep(1.*3600)
 
     # Since everything is backed up, totally OK to Ctrl+C and pick up later
 ```
