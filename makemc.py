@@ -44,6 +44,7 @@ miniaod = CMSSWTask(
             dataset = aod.get_sample().get_datasetname().replace("AOD","MINIAOD"),
             ),
         open_dataset = True,
+        flush = True,
         files_per_output = 2,
         pset = "mcmaking/pset_miniaod.py",
         cmssw_version = "CMSSW_8_0_21",
@@ -52,4 +53,5 @@ miniaod = CMSSWTask(
 workflow = [lhe, raw, aod, miniaod]
 for part in workflow:
     part.process()
+    print part.get_task_summary()
 

@@ -127,6 +127,11 @@ class EventsFile(File):
 
     def calculate_nevents_negative(self):
         self.nevents_negative = self.calculate(all_or_negative="negative")
+        # Quick fix for cases where we end up (nevents,neventsneg) of like (0,-14)
+        # when making miniaod
+        if self.nevents_negative != 0 and self.nevents == 0:
+            self.nevents = self.nevents_negative
+            self.nevents_negative = 0
 
     def calculate(self, all_or_negative="all", treename="Events"):
         import ROOT as r

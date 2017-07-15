@@ -82,7 +82,7 @@ fin = r.TFile("${OUTPUTNAME}.root","update")
 t = fin.Get("Events")
 t.GetUserInfo().Clear()
 nevts = t.GetEntries()
-nevts_neg = t.GetEntries("genps_weight < 0")
+nevts_neg = nevts - t.GetEntries("genps_weight > 0")
 evts = r.TParameter(int)("nevts", nevts)
 evts_neg = r.TParameter(int)("nevts_neg", nevts_neg)
 print "Writing metadata. Nevents = {0} ({1} negative)".format(nevts, nevts_neg)
@@ -94,9 +94,11 @@ EOL
 
 # Rigorous sweeproot which checks ALL branches for ALL events.
 # If GetEntry() returns -1, then there was an I/O problem, so we will delete it
+# Special consideration to ignore stupid CMSSW errors and old root versions
 python << EOL
 import ROOT as r
 import os
+import traceback
 foundBad = False
 try:
     f1 = r.TFile("${OUTPUTNAME}.root")
@@ -113,7 +115,10 @@ try:
                 foundBad = True
                 print "[RSR] found bad event %i" % i
                 break
-except: foundBad = True
+except Exception as ex: 
+    msg = traceback.format_exc()
+    if "EDProductGetter" not in msg:
+        foundBad = True
 if foundBad:
     print "[RSR] removing output file because it does not deserve to live"
     os.system("rm ${OUTPUTNAME}.root")
