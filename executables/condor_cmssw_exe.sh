@@ -64,7 +64,7 @@ if [ "$INPUTFILENAMES" != "dummyfile" ]; then
     echo "])" >> pset.py
 fi
 if [ "$FIRSTEVT" -ge 0 ]; then
-    echo "process.source.skipEvents = cms.untracked.uint32(${FIRSTEVT})" >> pset.py
+    echo "process.source.firstEvent = cms.untracked.uint32(${FIRSTEVT})" >> pset.py
 fi
 
 echo "before running: ls -lrth"

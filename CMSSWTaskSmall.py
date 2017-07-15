@@ -72,7 +72,7 @@ class CMSSWTask(CondorTask):
         expectedevents = out.get_nevents() if self.check_expectedevents else -1
         if self.split_within_files:
             nevts = self.events_per_output
-            firstevt = (index-1)*self.events_per_output
+            firstevt = 1+(index-1)*self.events_per_output
             expectedevents = -1
             inputs_commasep = "dummyfile"
         pset_args = self.pset_args
@@ -128,7 +128,7 @@ def set_output_name(outputname):
         # for LHE where we want to split within files,
         # we specify all the files at once, and then shove them in the pset
         # later on we will then tell each job the number of events to process
-        # and the first event to start with (skipEvents)
+        # and the first event to start with (firstEvent)
         if self.split_within_files:
             fnames = ['"{0}"'.format(fo.get_name().replace("/hadoop/cms","")) for fo in self.get_inputs(flatten=True)]
             with open(pset_location_out,"a") as fhin:
