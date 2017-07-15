@@ -19,19 +19,10 @@ def test_workflow():
     step0, step1, step2, step3 = [], [], [], []
     do_cmd("mkdir -p {}".format(basepath))
     for i in range(6):
-        # step0.append( File(basepath=basepath, name="step0_{}.root".format(i)) )
-        # step1.append( File(basepath=basepath, name="step1_{}.root".format(i)) )
-        # step2.append( File(basepath=basepath, name="step2_{}.root".format(i),fake=(i%2==0)) )
-        # step3.append( File(basepath=basepath, name="step3_{}.root".format(i)) )
         step0.append( File(name="step0_{}.root".format(i)) )
         step1.append( File(name="step1_{}.root".format(i)) )
-        # step2.append( File(name="step2_{}.root".format(i),fake=(i%2==0)) )
         step2.append( File(name="step2_{}.root".format(i)) )
         step3.append( File(name="step3_{}.root".format(i)) )
-        # step0.append( "step0_{}.root".format(i) )
-        # step1.append( "step1_{}.root".format(i) )
-        # step2.append( "step2_{}.root".format(i) )
-        # step3.append( "step3_{}.root".format(i) )
 
     import pprint
     # print step2
