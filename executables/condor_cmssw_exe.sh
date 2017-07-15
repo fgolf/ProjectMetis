@@ -8,8 +8,9 @@ PSET=$5
 CMSSWVERSION=$6
 SCRAMARCH=$7
 NEVTS=$8
-EXPECTEDNEVTS=$9
-PSETARGS="${@:10}" # since args can have spaces, we take 10th-->last argument as one
+FIRSTEVT=$9
+EXPECTEDNEVTS=${10}
+PSETARGS="${@:11}" # since args can have spaces, we take 10th-->last argument as one
 
 # Make sure OUTPUTNAME doesn't have .root since we add it manually
 OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
@@ -41,22 +42,30 @@ eval `scramv1 project CMSSW $CMSSWVERSION`
 cd $CMSSWVERSION
 eval `scramv1 runtime -sh`
 mv ../$PSET pset.py
-mv ../package.tar.gz package.tar.gz
-tar xzf package.tar.gz
+[ -e ../package.tar.gz ] && { 
+    mv ../package.tar.gz package.tar.gz;
+    tar xzf package.tar.gz;
+}
 scram b
+
 
 # logging every 45 seconds gives ~100kb log file/3 hours
 dstat -cdngytlmrs --float --nocolor -T --output dsout.csv 45 >& /dev/null &
 
 echo "process.maxEvents.input = cms.untracked.int32(${NEVTS})" >> pset.py
-echo "process.out.fileName = cms.untracked.string(\"${OUTPUTNAME}.root\")" >> pset.py
-echo "process.source.fileNames = cms.untracked.vstring([" >> pset.py
-for INPUTFILENAME in $(echo "$INPUTFILENAMES" | sed -n 1'p' | tr ',' '\n'); do
-    # INPUTFILENAME=$(echo $INPUTFILENAME | sed 's|/hadoop/cms||')
-    # INPUTFILENAME="root://xrootd.unl.edu/${INPUTFILENAME}"
-    echo "\"${INPUTFILENAME}\"," >> pset.py
-done
-echo "])" >> pset.py
+echo "set_output_name(\"${OUTPUTNAME}.root\")" >> pset.py
+if [ "$INPUTFILENAMES" != "dummyfile" ]; then 
+    echo "process.source.fileNames = cms.untracked.vstring([" >> pset.py
+    for INPUTFILENAME in $(echo "$INPUTFILENAMES" | sed -n 1'p' | tr ',' '\n'); do
+        INPUTFILENAME=$(echo $INPUTFILENAME | sed 's|^/hadoop/cms||')
+        # INPUTFILENAME="root://xrootd.unl.edu/${INPUTFILENAME}"
+        echo "\"${INPUTFILENAME}\"," >> pset.py
+    done
+    echo "])" >> pset.py
+fi
+if [ "$FIRSTEVT" -ge 0 ]; then
+    echo "process.source.skipEvents = cms.untracked.uint32(${FIRSTEVT})" >> pset.py
+fi
 
 echo "before running: ls -lrth"
 ls -lrth 
