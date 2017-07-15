@@ -35,7 +35,7 @@ class CMSSWTask(Task):
         self.pset = kwargs.get("pset", None)
         self.pset_args = kwargs.get("pset_args", "print")
         self.cmssw_version = kwargs.get("cmssw_version", None)
-        self.tarfile = kwargs.get("output_name",None)
+        self.tarfile = kwargs.get("tarfile",None)
         self.is_data = kwargs.get("is_data",False)
         self.check_expectedevents = kwargs.get("check_expectedevents",True)
         self.kwargs = kwargs
@@ -272,6 +272,7 @@ class CMSSWTask(Task):
         cmssw_ver = self.cmssw_version
         scramarch = self.scram_arch
         nevts = -1
+        firstevt = -1
         if self.check_expectedevents:
             expectedevents = out.get_nevents()
         else:
@@ -281,7 +282,7 @@ class CMSSWTask(Task):
         # note that pset_args must be the last argument since it can have spaces
         # check executables/condor_cmssw_exe.sh to see why
         arguments = [ outdir, outname_noext, inputs_commasep,
-                index, pset_basename, cmssw_ver, scramarch, nevts, expectedevents, pset_args ]
+                index, pset_basename, cmssw_ver, scramarch, nevts, firstevt, expectedevents, pset_args ]
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
         package_full = os.path.abspath(self.package_path)
         return Utils.condor_submit(executable=executable, arguments=arguments,
