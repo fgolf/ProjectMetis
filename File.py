@@ -147,7 +147,6 @@ class EventsFile(File):
                 d_nevts[key] = obj.FindObject(key)
                 if d_nevts[key]:
                     d_nevts[key] = int(d_nevts[key].GetVal())
-                    print d_nevts
             else:
                 d_nevts[key] = t.GetEntries("genps_weight < 0" if do_negative else "")
         return d_nevts["nevts"], d_nevts["nevts_neg"]
