@@ -107,11 +107,12 @@ try:
     if int(expectednevts) > 0 and int(t.GetEntries()) != int(expectednevts):
         print "[RSR] nevents mismatch"
         foundBad = True
-    for i in range(0,t.GetEntries(),1):
-        if t.GetEntry(i) < 0:
-            foundBad = True
-            print "[RSR] found bad event %i" % i
-            break
+    if not "root/5.3" in r.__file__:
+        for i in range(0,t.GetEntries(),1):
+            if t.GetEntry(i) < 0:
+                foundBad = True
+                print "[RSR] found bad event %i" % i
+                break
 except: foundBad = True
 if foundBad:
     print "[RSR] removing output file because it does not deserve to live"
