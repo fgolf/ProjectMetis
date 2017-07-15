@@ -169,7 +169,8 @@ class CondorTask(Task):
         return_fraction specified as True
         """
         bools = map(lambda output: output.get_status() == Constants.DONE, self.get_outputs())
-        frac = 1.0*sum(bools)/len(bools)
+        if len(bools) == 0: frac = 0.
+        else: frac = 1.0*sum(bools)/len(bools)
         if return_fraction:
             return frac
         else:
