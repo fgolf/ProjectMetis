@@ -68,20 +68,24 @@ class CMSSWTask(CondorTask):
         cmssw_ver = self.cmssw_version
         scramarch = self.scram_arch
         nevts = -1
-        if self.check_expectedevents:
-            expectedevents = out.get_nevents()
-        else:
+        firstevt = -1
+        expectedevents = out.get_nevents() if self.check_expectedevents else -1
+        if self.split_within_files:
+            nevts = self.events_per_output
+            firstevt = (index-1)*self.events_per_output
             expectedevents = -1
+            inputs_commasep = "dummyfile"
         pset_args = self.pset_args
         executable = self.executable_path
         # note that pset_args must be the last argument since it can have spaces
         # check executables/condor_cmssw_exe.sh to see why
         arguments = [ outdir, outname_noext, inputs_commasep,
-                index, pset_basename, cmssw_ver, scramarch, nevts, expectedevents, pset_args ]
+                index, pset_basename, cmssw_ver, scramarch, nevts, firstevt, expectedevents, pset_args ]
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
         package_full = os.path.abspath(self.package_path)
+        input_files = [package_full,pset_full] if self.tarfile else [pset_full]
         return Utils.condor_submit(executable=executable, arguments=arguments,
-                inputfiles=[package_full,pset_full], logdir=logdir_full,
+                inputfiles=input_files, logdir=logdir_full,
                 selection_pairs=[["taskname",self.unique_name],["jobnum",index]],
                 fake=False)
 
@@ -108,11 +112,27 @@ class CMSSWTask(CondorTask):
 if hasattr(process,"eventMaker"):
     process.eventMaker.CMS3tag = cms.string('{tag}')
     process.eventMaker.datasetName = cms.string('{dsname}')
-process.out.dropMetaData = cms.untracked.string("NONE")
+    process.out.dropMetaData = cms.untracked.string("NONE")
+    process.GlobalTag.globaltag = "{gtag}"
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
-process.GlobalTag.globaltag = "{gtag}"\n\n""".format(
+
+def set_output_name(outputname):
+    for attr in dir(process):
+        if not hasattr(process,attr): continue
+        if type(getattr(process,attr)) != cms.OutputModule: continue
+        getattr(process,attr).fileName = outputname
+\n\n""".format(
             tag=self.tag, dsname=self.get_sample().get_datasetname(), gtag=self.global_tag
             ))
+
+        # for LHE where we want to split within files,
+        # we specify all the files at once, and then shove them in the pset
+        # later on we will then tell each job the number of events to process
+        # and the first event to start with (skipEvents)
+        if self.split_within_files:
+            fnames = ['"{0}"'.format(fo.get_name().replace("/hadoop/cms","")) for fo in self.get_inputs(flatten=True)]
+            with open(pset_location_out,"a") as fhin:
+                fhin.write("\nprocess.source.fileNames = cms.untracked.vstring(\n{0}\n)\n\n".format(",\n".join(fnames)))
 
         # take care of package tar file. easy.
         Utils.do_cmd("cp {0} {1}".format(self.tarfile,self.package_path))

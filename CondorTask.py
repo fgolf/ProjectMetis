@@ -27,12 +27,17 @@ class CondorTask(Task):
         self.events_per_output = kwargs.get("events_per_output", -1)
         self.files_per_output = kwargs.get("files_per_output", -1)
         self.output_name = kwargs.get("output_name","output.root")
-        self.output_dir = kwargs.get("output_dir",None)
+        # self.output_dir = kwargs.get("output_dir",None)
         self.scram_arch = kwargs.get("scram_arch","slc6_amd64_gcc530")
-        self.tag = kwargs.get("tag",None)
+        self.tag = kwargs.get("tag","v0")
         self.global_tag = kwargs.get("global_tag")
         self.cmssw_version = kwargs.get("cmssw_version", None)
-        self.tarfile = kwargs.get("output_name",None)
+        self.tarfile = kwargs.get("tarfile",None)
+        # LHE, for example, might be large, and we want to use
+        # skip events to process event chunks within files
+        # in that case, we need events_per_output > 0 and total_nevents > 0
+        self.split_within_files = kwargs.get("split_within_files", False)
+        self.total_nevents = kwargs.get("total_nevents", -1)
 
         # If we have this attribute, then we must have gotten it from
         # a subclass (so use that executable instead of just bland condor exe)
@@ -105,8 +110,16 @@ class CondorTask(Task):
 
         flush = (not self.open_dataset) or flush
         prefix, suffix = self.output_name.rsplit(".",1)
-        chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=self.events_per_output, files_per_output=self.files_per_output, flush=flush)
+        if self.split_within_files:
+            if self.total_nevents < 1 or self.events_per_output < 1:
+                raise Exception("If splitting within files (presumably for LHE), need to specify total_nevents and events_per_output")
+            nchunks = int(self.total_nevents / self.events_per_output)
+            chunks = [files for _ in range(nchunks)]
+            leftoverchunk = []
+        else:
+            chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=self.events_per_output, files_per_output=self.files_per_output, flush=flush)
         for chunk in chunks:
+            if not chunk: continue
             output_path = "{0}/{1}_{2}.{3}".format(self.get_outputdir(),prefix,nextidx,suffix)
             output_file = EventsFile(output_path)
             nevents_in_output = sum(map(lambda x: x.get_nevents(), chunk))
@@ -266,8 +279,9 @@ class CondorTask(Task):
                 index, cmssw_ver, scramarch ]
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
         package_full = os.path.abspath(self.package_path)
+        input_files = [package_full] if self.tarfile else []
         return Utils.condor_submit(executable=executable, arguments=arguments,
-                inputfiles=[package_full], logdir=logdir_full,
+                inputfiles=input_files, logdir=logdir_full,
                 selection_pairs=[["taskname",self.unique_name],["jobnum",index]],
                 fake=False)
 
@@ -281,8 +295,9 @@ class CondorTask(Task):
         # take care of executable. easy.
         Utils.do_cmd("cp {0} {1}".format(self.input_executable,self.executable_path))
 
-        # take care of package tar file. easy.
-        Utils.do_cmd("cp {0} {1}".format(self.tarfile,self.package_path))
+        # take care of package tar file if we were told to. easy.
+        if self.tarfile:
+            Utils.do_cmd("cp {0} {1}".format(self.tarfile,self.package_path))
 
         self.prepared_inputs = True
 
