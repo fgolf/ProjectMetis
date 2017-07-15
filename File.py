@@ -126,14 +126,12 @@ class EventsFile(File):
         self.nevents = self.calculate(all_or_negative="all")
 
     def calculate_nevents_negative(self):
-        self.nevents_negative = self.calculate(all_or_negative="negative")
-        # Quick fix for cases where we end up (nevents,neventsneg) of like (0,-14)
-        # when making miniaod
-        if self.nevents_negative != 0 and self.nevents == 0:
-            self.nevents = self.nevents_negative
-            self.nevents_negative = 0
+        self.nevents, self.nevents_negative = self.calculate()
 
-    def calculate(self, all_or_negative="all", treename="Events"):
+    def calculate(self,  treename="Events"):
+        """
+        Return [nevents total, nevents negative]
+        """
         import ROOT as r
 
         fin = r.TFile(self.name)
@@ -141,15 +139,18 @@ class EventsFile(File):
 
         t = fin.Get(treename)
         if not t: raise Exception("Tree {0} in file {1} does not exist, so cannot calculate nevents!".format(treename,self.name))
-        key = "nevts_neg" if all_or_negative == "negative" else "nevts"
-        obj = t.GetUserInfo()
-        if obj and obj.FindObject(key):
-            nevts = obj.FindObject(key)
-            if nevts:
-                nevts = int(nevts.GetVal())
-        else:
-            nevts = t.GetEntries("genps_weight > 0" if all_or_negative == "negative" else "")
-        return nevts
+        d_nevts = {}
+        for do_negative in [True,False]:
+            key = "nevts_neg" if do_negative else "nevts"
+            obj = t.GetUserInfo()
+            if obj and obj.FindObject(key):
+                d_nevts[key] = obj.FindObject(key)
+                if d_nevts[key]:
+                    d_nevts[key] = int(d_nevts[key].GetVal())
+                    print d_nevts
+            else:
+                d_nevts[key] = t.GetEntries("genps_weight < 0" if do_negative else "")
+        return d_nevts["nevts"], d_nevts["nevts_neg"]
 
 
 
