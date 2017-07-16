@@ -180,10 +180,11 @@ class CondorTask(Task):
         else:
             return frac >= self.min_completion_fraction
 
-    def run(self):
+    def run(self, fake=False):
         """
         Main logic for looping through (inputs,output) pairs. In this
         case, this is where we submit, resubmit, etc. to condor
+        If fake is True, then we mark the outputs as done and never submit
         """
         condor_job_dicts = self.get_running_condor_jobs()
         condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
@@ -195,14 +196,14 @@ class CondorTask(Task):
             out.recheck() 
             index = out.get_index() # "merged_ntuple_42.root" --> 42
             on_condor = index in condor_job_indices
-            done = out.exists() and not on_condor
+            done = (out.exists() and not on_condor) or fake
             if done:
                 self.handle_done_output(out)
                 continue
 
             if not on_condor:
                 # Submit and keep a log of condor_ids for each output file that we've submitted
-                succeeded, cluster_id = self.submit_condor_job(ins, out, fake=False)
+                succeeded, cluster_id = self.submit_condor_job(ins, out, fake=fake)
                 if succeeded:
                     if index not in self.job_submission_history: self.job_submission_history[index] = []
                     self.job_submission_history[index].append(cluster_id)
