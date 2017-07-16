@@ -34,15 +34,25 @@ if __name__ == "__main__":
             # "/SinglePhoton/Run2017A-PromptReco-v2/MINIAOD",
             # "/SinglePhoton/Run2017A-PromptReco-v3/MINIAOD",
 
-             "/MuonEG/Run2017B-PromptReco-v1/MINIAOD",
-             "/SingleElectron/Run2017B-PromptReco-v1/MINIAOD",
-             "/MET/Run2017B-PromptReco-v1/MINIAOD",
-             "/SinglePhoton/Run2017B-PromptReco-v1/MINIAOD",
-             "/SingleMuon/Run2017B-PromptReco-v1/MINIAOD",
-             "/DoubleMuon/Run2017B-PromptReco-v1/MINIAOD",
-             "/JetHT/Run2017B-PromptReco-v1/MINIAOD",
-             "/DoubleEG/Run2017B-PromptReco-v1/MINIAOD",
-             "/HTMHT/Run2017B-PromptReco-v1/MINIAOD",
+             # "/MuonEG/Run2017B-PromptReco-v1/MINIAOD",
+             # "/SingleElectron/Run2017B-PromptReco-v1/MINIAOD",
+             # "/MET/Run2017B-PromptReco-v1/MINIAOD",
+             # "/SinglePhoton/Run2017B-PromptReco-v1/MINIAOD",
+             # "/SingleMuon/Run2017B-PromptReco-v1/MINIAOD",
+             # "/DoubleMuon/Run2017B-PromptReco-v1/MINIAOD",
+             # "/JetHT/Run2017B-PromptReco-v1/MINIAOD",
+             # "/DoubleEG/Run2017B-PromptReco-v1/MINIAOD",
+             # "/HTMHT/Run2017B-PromptReco-v1/MINIAOD",
+
+             "/MuonEG/Run2017B-PromptReco-v2/MINIAOD",
+             "/SingleElectron/Run2017B-PromptReco-v2/MINIAOD",
+             "/MET/Run2017B-PromptReco-v2/MINIAOD",
+             "/SinglePhoton/Run2017B-PromptReco-v2/MINIAOD",
+             "/SingleMuon/Run2017B-PromptReco-v2/MINIAOD",
+             "/DoubleMuon/Run2017B-PromptReco-v2/MINIAOD",
+             "/JetHT/Run2017B-PromptReco-v2/MINIAOD",
+             "/DoubleEG/Run2017B-PromptReco-v2/MINIAOD",
+             "/HTMHT/Run2017B-PromptReco-v2/MINIAOD",
 
             ]
 
@@ -56,9 +66,13 @@ if __name__ == "__main__":
             # pick cmssw and tarfile from the era
             cmsswver = "CMSSW_9_2_1"
             tarfile = "/nfs-7/userdata/libCMS3/lib_CMS4_V00-00-03_workaround.tar.gz"
-            if "2017B" in dsname: 
+            if "2017B-PromptReco-v1" in dsname: 
                 cmsswver = "CMSSW_9_2_3_patch2"
                 tarfile = "/nfs-7/userdata/libCMS3/lib_CMS4_V00-00-03_2017B.tar.gz"
+            elif "2017B-PromptReco-v1" in dsname: 
+                cmsswver = "CMSSW_9_2_5_patch1"
+                tarfile = "/nfs-7/userdata/libCMS3/lib_CMS4_V00-00-04.tar.gz"
+            
 
             task = CMSSWTask(
                     sample = DBSSample(dataset=dsname),
