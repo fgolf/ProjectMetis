@@ -13,9 +13,10 @@ class Path(object):
         """
         Path(Task_655D1B9D404EBE8F * Task_1EBBEA62464E08FE)
         """
-        tasks_str = " * ".join([t.get_task_name()+"_"+t.get_task_hash() for t in self.tasks])
+        # tasks_str = " * ".join([t.get_task_name()+"_"+t.get_task_hash() for t in self.tasks])
+        tasks_str = "\n * \n".join(["\t"+str(t).replace("\n","\n\t") for t in self.tasks])
         # tasks_str = " * ".join([t.__repr__() for t in self.tasks])
-        return "{}({})".format(self.__class__.__name__,tasks_str)
+        return "{}(\n{}\n)".format(self.__class__.__name__,tasks_str)
 
     def __add__(self, other):
         return Path(self.tasks + other.get_tasks())
@@ -39,14 +40,14 @@ class Path(object):
         for t1,t2 in zip(self.tasks, self.tasks[1:]):
             t2.set_requirements([t1])
 
-    def run(self):
+    def process(self):
         # Compute dependencies before running path
         self.compute()
 
         for task in self.tasks:
             if not task.complete():
                 # print "Not complete, so running", task
-                task.run()
+                task.process()
             else:
                 pass
                 # print "Completed", task

@@ -1,7 +1,7 @@
 import Utils
-from pprint import pprint
 from CMSSWTask import CMSSWTask
 from Sample import DirectorySample
+from Path import Path
 
 lhe = CMSSWTask(
         sample = DirectorySample(
@@ -50,8 +50,6 @@ miniaod = CMSSWTask(
         cmssw_version = "CMSSW_8_0_21",
         )
 
-workflow = [lhe, raw, aod, miniaod]
-for part in workflow:
-    part.process()
-    # print part.get_task_summary()
+p = Path([lhe,raw,aod,miniaod])
+p.process()
 
