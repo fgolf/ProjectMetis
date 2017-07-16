@@ -89,7 +89,7 @@ class CondorTask(Task):
     def get_job_submission_history(self):
         return self.job_submission_history
 
-    def update_mapping(self, flush=False):
+    def update_mapping(self, flush=False, override_chunks=[]):
         """
         Given the sample, make the input-output mapping by chunking
         """
@@ -118,6 +118,10 @@ class CondorTask(Task):
             leftoverchunk = []
         else:
             chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=self.events_per_output, files_per_output=self.files_per_output, flush=flush)
+        if len(override_chunks) > 0:
+            self.logger.debug("Manual override to have {0} chunks".format(len(override_chunks)))
+            chunks = override_chunks
+            leftoverchunk = []
         for chunk in chunks:
             if not chunk: continue
             output_path = "{0}/{1}_{2}.{3}".format(self.get_outputdir(),prefix,nextidx,suffix)
@@ -198,7 +202,7 @@ class CondorTask(Task):
 
             if not on_condor:
                 # Submit and keep a log of condor_ids for each output file that we've submitted
-                succeeded, cluster_id = self.submit_condor_job(ins, out)
+                succeeded, cluster_id = self.submit_condor_job(ins, out, fake=False)
                 if succeeded:
                     if index not in self.job_submission_history: self.job_submission_history[index] = []
                     self.job_submission_history[index].append(cluster_id)
@@ -267,7 +271,7 @@ class CondorTask(Task):
         return Utils.condor_q(selection_pairs=[["taskname",self.unique_name]], extra_columns=["jobnum"])
 
 
-    def submit_condor_job(self, ins, out):
+    def submit_condor_job(self, ins, out, fake=False):
 
         outdir = self.output_dir
         outname_noext = self.output_name.rsplit(".",1)[0]
@@ -284,7 +288,7 @@ class CondorTask(Task):
         return Utils.condor_submit(executable=executable, arguments=arguments,
                 inputfiles=input_files, logdir=logdir_full,
                 selection_pairs=[["taskname",self.unique_name],["jobnum",index]],
-                fake=False)
+                fake=fake)
 
 
     def prepare_inputs(self):

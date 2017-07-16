@@ -57,7 +57,7 @@ class CMSSWTask(CondorTask):
         self.update_dis(d_metadata)
 
 
-    def submit_condor_job(self, ins, out):
+    def submit_condor_job(self, ins, out, fake=False):
 
         outdir = self.output_dir
         outname_noext = self.output_name.rsplit(".",1)[0]
@@ -87,7 +87,7 @@ class CMSSWTask(CondorTask):
         return Utils.condor_submit(executable=executable, arguments=arguments,
                 inputfiles=input_files, logdir=logdir_full,
                 selection_pairs=[["taskname",self.unique_name],["jobnum",index]],
-                fake=False)
+                fake=fake)
 
 
     def prepare_inputs(self):
