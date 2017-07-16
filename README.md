@@ -1,5 +1,7 @@
 # ProjectMetis
 
+<img src="http://i.imgur.com/oYKKgyW.png" width="400">
+
 Project details can be found [here](https://docs.google.com/document/d/14XvQRZpccxQ82PWhWLuY8GnHm2fv7orn4wvvxytuQKU/edit).
 
 As an overview, ProjectMetis seeks to host the following functionality:
