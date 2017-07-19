@@ -8,7 +8,6 @@ if __name__ == "__main__":
 
     dataset_names = [
 
-            # "/MET/Run2017A-PromptReco-v3/MINIAOD",
             # "/DoubleEG/Run2017A-PromptReco-v2/MINIAOD",
             # "/DoubleEG/Run2017A-PromptReco-v3/MINIAOD",
             # "/DoubleMuon/Run2017A-PromptReco-v1/MINIAOD",
@@ -56,7 +55,7 @@ if __name__ == "__main__":
 
             ]
 
-    for i in range(100):
+    for i in range(1000):
 
 
         total_summary = {}
@@ -78,7 +77,8 @@ if __name__ == "__main__":
                     sample = DBSSample(dataset=dsname),
                     open_dataset = True,
                     # every 48 iterations, "flush" remaining files
-                    flush = (i%48==0), 
+                    # not starting with first iteration
+                    flush = ((i+1)%48==0), 
                     events_per_output = 450e3,
                     output_name = "merged_ntuple.root",
                     tag = "CMS4_V00-00-03",
