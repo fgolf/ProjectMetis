@@ -4,6 +4,8 @@ import json
 from Sample import DBSSample
 from CMSSWTask import CMSSWTask
 
+from statsparser import write_web_summary
+
 if __name__ == "__main__":
 
     dataset_names = [
@@ -111,6 +113,7 @@ if __name__ == "__main__":
                     "counts": total_counts,
                     }
             json.dump(total_json,fhout)
+        write_web_summary(summary_fname="summary.json")
 
         # 1 hr power nap
         time.sleep(1.*3600)
