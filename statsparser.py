@@ -6,14 +6,14 @@ from pprint import pprint
 with open("summary.json","r") as fhin:
     data = json.load(fhin)
 summary = data["summary"]
-counts = data["counts"]
+# counts = data["counts"]
 
 for dsname in summary.keys():
     print
 
-    sample = summary[dsname]
+    sample = summary[dsname]["jobs"]
     cms4nevts = 0
-    dbsnevts = counts[dsname]["dbs"]
+    dbsnevts = summary[dsname]["queried_nevents"]
     for iout in sample.keys():
         job = sample[iout]
 

@@ -244,7 +244,9 @@ class CondorTask(Task):
         # set up condor input if it's the first time submitting
         if not self.prepared_inputs: self.prepare_inputs()
 
+        self.logger.debug("Started processing {0}".format(self.sample.get_datasetname()))
         self.run()
+        self.logger.debug("Ended processing {0}".format(self.sample.get_datasetname()))
 
         if self.complete():
             self.finalize()
@@ -312,23 +314,26 @@ class CondorTask(Task):
         returns a dictionary with mapping and condor job info/history:
         must be JSON seralizable, so don't rely on repr for any classes!
         {
-            <output_index>: {
-                "output": [outfilename,outfilenevents],
-                "inputs": [[infilename,infilenevents], ...],
-                "output_exists": out.exists(),
-                "condor_jobs": [
-                        {
-                            "cluster_id": <cluster_id>,
-                            "logfile_err": <err_file_path>,
-                            "logfile_out": <out_file_path>,
-                        },
-                        ...
-                    ],
-                "current_job": <current_condorq_dict>,
-                "is_on_condor": <True|False>
+            "jobs": {
+                <output_index>: {
+                    "output": [outfilename,outfilenevents],
+                    "inputs": [[infilename,infilenevents], ...],
+                    "output_exists": out.exists(),
+                    "condor_jobs": [
+                            {
+                                "cluster_id": <cluster_id>,
+                                "logfile_err": <err_file_path>,
+                                "logfile_out": <out_file_path>,
+                            },
+                            ...
+                        ],
+                    "current_job": <current_condorq_dict>,
+                    "is_on_condor": <True|False>
 
+                },
+                ...
             },
-            ...
+            "queried_nevents": <dbsnevents>
         }
         """
 
