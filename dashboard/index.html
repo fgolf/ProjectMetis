@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Monitoring</title>
+        <link rel="icon" type="image/png" sizes="96x96" href="images/favicon.png">
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+        <link rel="stylesheet" href="style.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script src="main.js"></script>
+
+    </head>
+
+    <body>
+
+        <audio class="duckAudio" controls preload="none" style='display:none;'>
+            <source src="images/ducktales.mp3" type="audio/mpeg">
+        </audio>
+
+        <div id="topBar">
+            <!-- <img class="mainlogo" src="images/crab.png" /> -->
+            <!-- <img class="mainlogo" src="images/metislogo.png" /> -->
+            <!-- <img class="mainlogo" src="images/workflowlogo.png" /> -->
+            <img class="mainlogo" src="images/workflowtransparent.png" />
+            <!-- <span id="firstTitle" class="thin">auto</span>Tupler -->
+            <span id="firstTitle" class="thin">Project</span>Metis
+            <span class="thin">
+                &emsp;
+                <!-- <a href="#/" id="toggle_all" onClick="expandAll()">show details</a>&ensp;|&ensp; -->
+                <a href="#/" onClick="$('#summary').slideToggle(50)">summary</a>&ensp;|&ensp;
+                <a href="#/" onClick="$('#bacon').slideToggle(50)">bacon</a>&ensp;|&ensp;
+                <a href="#/" onClick="$('#cheeseburger').slideToggle(50)">cheeseburger</a>&ensp;|&ensp;
+                <!-- <a href="#/" onClick="$('#twiki').slideToggle(50)">twiki</a>&ensp;|&ensp; -->
+                <!-- <a href="#/" onClick="$('#chart_div').slideToggle(50);">chart</a>&ensp;|&ensp; -->
+                <!-- <a href="#/" onClick="$('#log_div').slideToggle(50);">log</a> -->
+                <span id="admin" style="color:#FF3333; display:none;">&emsp;&emsp;<b>admin mode</b></span>
+            </span>
+        </div>
+        <div id="colorstrip"></div>
+
+        <div id="container">
+
+            <span id="last_updated" class="lastUpdated"></span>
+            <div id="summary" class="section" style='display:none;'> 
+                This is not a bacon cheeseburger
+            </div>
+            <!-- <div id="chart_div" style='display:none;'></div> -->
+            <!-- <div id="log_div" class="section" style='display:none;'> </div> -->
+            <div id="section_1" class="section"></div>
+            <div id="message_wrapper"><div id="message"></div></div>
+
+        </div>
+
+    </body>
+</html>

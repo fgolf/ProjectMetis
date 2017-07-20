@@ -17,7 +17,8 @@ def write_web_summary(summary_fname="summary.json"):
         if DEBUG:
             print text
 
-    d_web_summary = {}
+    tasks = []
+    # d_task = {}
     for dsname in summary.keys():
         do_print("")
 
@@ -26,6 +27,8 @@ def write_web_summary(summary_fname="summary.json"):
         dbsnevts = summary[dsname]["queried_nevents"]
         logs_to_plot = []
         bad_jobs = {}
+        njobs = len(sample.keys())
+        njobsdone = 0
         for iout in sample.keys():
             job = sample[iout]
 
@@ -33,6 +36,7 @@ def write_web_summary(summary_fname="summary.json"):
 
             if is_done:
                 cms4nevts += job["output"][1]
+                njobsdone += 1
                 continue
 
             condor_jobs = job["condor_jobs"]
@@ -84,14 +88,28 @@ def write_web_summary(summary_fname="summary.json"):
                     dsname, dbsnevts-cms4nevts, dbsnevts, cms4nevts
                     ))
 
-        d_web_summary[dsname] = {}
-        d_web_summary[dsname]["bad"] = {
+        d_task = {}
+        d_task["general"] = {
+                "dataset": dsname,
+                "nevents_total": dbsnevts,
+                "nevents_done": cms4nevts,
+                "njobs_total": njobs,
+                "njobs_done": njobsdone,
+                "status": "running",
+                "type": "CMS4",
+                "open_dataset": True,
+
+        }
+        d_task["bad"] = {
                 "plots": plot_paths,
                 "jobs_not_done": bad_jobs,
                 "missing_events": dbsnevts-cms4nevts,
+        }
+        tasks.append(d_task)
 
-                }
-
+    d_web_summary = {
+            "tasks": tasks,
+            }
     with open("web_summary.json", 'w') as fhout:
         json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
     Utils.do_cmd("cp web_summary.json ~/public_html/dump/metis_test/")
