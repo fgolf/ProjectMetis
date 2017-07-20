@@ -266,8 +266,8 @@ function setUpDOM(data) {
         toappend += "<a href='#/' class='thick' onClick=\"$('#details_"+i+"').slideToggle(100)\">";
         if(general["type"] == "BABY") {
             toappend += "<span style='color: purple'>[&#128700; "+general["baby"]["analysis"]+" "+general["baby"]["baby_tag"]+"]</span> ";
-        } else if (general["type"] == "CMS3") {
-            toappend += "<span style='color: purple'>[CMS3]</span> ";
+        } else if (general["type"] == "CMS4") {
+            toappend += "<span style='color: purple'>[CMS4]</span> ";
         }
         toappend += general["dataset"]+"</a>";
         toappend += "<div class='pbar' id='pbar_"+i+"'>";
