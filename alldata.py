@@ -95,10 +95,10 @@ if __name__ == "__main__":
             # do pretty much everything
             task.process()
 
-            # save some information for analysis later
-            summary = task.get_task_summary()
-            total_summary[dsname] = summary
+            # save some information for the dashboard
+            total_summary[dsname] = task.get_task_summary()
 
+        # parse the total summary and write out the dashboard
         write_web_summary(data=total_summary, webdir="~/public_html/dump/metis_test/")
 
         # 1 hr power nap
