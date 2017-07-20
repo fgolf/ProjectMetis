@@ -171,11 +171,15 @@ function addInstructions(type) {
 function getProgress(general) {
     var type = general["type"];
     var stat = general["status"];
-    var done = 0;
-    var tot = 1;
+    var done = general["njobs_done"];
+    var tot = general["njobs_total"];
 
-    var pct = 100.0*general["njobs_done"]/general["njobs_total"];
-    return pct;
+    var pct = 100.0*done/tot;
+    return {
+        pct: pct,
+        done: done,
+        total: tot,
+        };
 
     // if (type == "CMS3") {
     //     if (stat == "new") return 0.0;
@@ -294,7 +298,8 @@ function fillDOM(data) {
         var bad = data["tasks"][i]["bad"] || {};
         var general = data["tasks"][i]["general"];
 
-        var pct = Math.round(getProgress(general));
+        var progress = getProgress(general);
+        var pct = Math.round(progress.pct);
         var color = 'hsl(' + pct*0.8 + ', 70%, 50%)';
         if(duckMode) {
             color = 'hsl(' + (pct*0.8+50) + ', 70%, 50%)';
@@ -305,7 +310,7 @@ function fillDOM(data) {
         }
 
 
-        var towrite = general["status"] + " [" + pct + "%]";
+        var towrite = general["status"] + " <span title='"+progress.done+"/"+progress.total+"'>[" + pct + "%]</span>";
         // if it's an open dataset, use a universal color and modify text
         if (general["open_dataset"]) {
             towrite = "open, "+towrite;

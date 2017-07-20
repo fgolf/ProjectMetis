@@ -95,25 +95,11 @@ if __name__ == "__main__":
             # do pretty much everything
             task.process()
 
-            # print task.get_outputdir()
-            # print task.get_legacy_metadata()
-
             # save some information for analysis later
             summary = task.get_task_summary()
             total_summary[dsname] = summary
-            dbsnevents = task.get_sample().get_nevents()
-            total_counts[dsname] = {
-                    "dbs": dbsnevents,
-                    }
 
-        # dump the summary information into a .json
-        with open("summary.json","w") as fhout:
-            total_json = {
-                    "summary": total_summary,
-                    "counts": total_counts,
-                    }
-            json.dump(total_json,fhout)
-        write_web_summary(summary_fname="summary.json")
+        write_web_summary(data=total_summary, webdir="~/public_html/dump/metis_test/")
 
         # 1 hr power nap
         time.sleep(1.*3600)

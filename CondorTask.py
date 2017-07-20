@@ -309,6 +309,13 @@ class CondorTask(Task):
 
         self.prepared_inputs = True
 
+    def supplement_task_summary(self, task_summary):
+        """
+        To be overloaded by subclassers 
+        This allows putting extra stuff into the task summary
+        """
+        return task_summary
+
     def get_task_summary(self):
         """
         returns a dictionary with mapping and condor job info/history:
@@ -334,6 +341,11 @@ class CondorTask(Task):
                 ...
             },
             "queried_nevents": <dbsnevents>
+            "open_dataset": self.open_dataset,
+            "output_dir": self.output_dir,
+            "tag": self.tag,
+            "global_tag": self.global_tag,
+            "cmssw_version": self.cmssw_version,
         }
         """
 
@@ -376,8 +388,15 @@ class CondorTask(Task):
         d_summary = {
                 "jobs": d_jobs,
                 "queried_nevents": self.get_sample().get_nevents(),
+                "open_dataset": self.open_dataset,
+                "output_dir": self.output_dir,
+                "tag": self.tag,
+                "global_tag": self.global_tag,
+                "cmssw_version": self.cmssw_version,
+                "executable": self.input_executable,
                 }
 
+        d_summary = self.supplement_task_summary(d_summary)
         return d_summary
 
 

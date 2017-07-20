@@ -1,15 +1,19 @@
 import json
 import os
 import sys
+import time
 from pprint import pprint
 import Plotter as plotter
 import LogParser
 import Utils
 
-def write_web_summary(summary_fname="summary.json"):
-    with open(summary_fname,"r") as fhin:
-        data = json.load(fhin)
-    summary = data["summary"]
+def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_html/dump/metis_test/"):
+    if not data:
+        with open(summary_fname,"r") as fhin:
+            data = json.load(fhin)
+
+    # summaries = data["summaries"]
+    summaries = data.copy()
     # counts = data["counts"]
 
     DEBUG = False
@@ -19,12 +23,13 @@ def write_web_summary(summary_fname="summary.json"):
 
     tasks = []
     # d_task = {}
-    for dsname in summary.keys():
+    for dsname in summaries.keys():
         do_print("")
 
-        sample = summary[dsname]["jobs"]
+        tasksummary = summaries[dsname]
+        sample = summaries[dsname]["jobs"]
         cms4nevts = 0
-        dbsnevts = summary[dsname]["queried_nevents"]
+        dbsnevts = summaries[dsname]["queried_nevents"]
         logs_to_plot = []
         bad_jobs = {}
         njobs = len(sample.keys())
@@ -89,7 +94,9 @@ def write_web_summary(summary_fname="summary.json"):
                     ))
 
         d_task = {}
-        d_task["general"] = {
+        d_task["general"] = tasksummary.copy()
+        del d_task["general"]["jobs"]
+        d_task["general"].update({
                 "dataset": dsname,
                 "nevents_total": dbsnevts,
                 "nevents_done": cms4nevts,
@@ -97,9 +104,7 @@ def write_web_summary(summary_fname="summary.json"):
                 "njobs_done": njobsdone,
                 "status": "running",
                 "type": "CMS4",
-                "open_dataset": True,
-
-        }
+        })
         d_task["bad"] = {
                 "plots": plot_paths,
                 "jobs_not_done": bad_jobs,
@@ -109,11 +114,13 @@ def write_web_summary(summary_fname="summary.json"):
 
     d_web_summary = {
             "tasks": tasks,
+            "last_updated": time.time(),
             }
     with open("web_summary.json", 'w') as fhout:
         json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
-    Utils.do_cmd("cp web_summary.json ~/public_html/dump/metis_test/")
-    Utils.do_cmd("cp plots/* ~/public_html/dump/metis_test/plots/")
+    Utils.do_cmd("cp web_summary.json {}".format(webdir))
+    Utils.do_cmd("mkdir -p plots/* {}/plots/".format(webdir))
+    Utils.do_cmd("cp plots/* {}/plots/".format(webdir))
         
 
 if __name__ == "__main__": 

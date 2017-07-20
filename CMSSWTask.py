@@ -173,6 +173,15 @@ def set_output_name(outputname):
             json.dump(d_metadata, fhout, sort_keys = True, indent = 4)
         self.logger.debug("Dumped metadata to {0}".format(metadata_file))
 
+    def supplement_task_summary(self, task_summary):
+        """
+        To be overloaded by subclassers 
+        This allows putting extra stuff into the task summary
+        """
+        task_summary["pset"] = self.pset
+        task_summary["pset_args"] = self.pset_args
+        return task_summary
+
     def update_dis(self, d_metadata):
         self.logger.debug("Updating DIS")
         self.sample.info["nevents_in"] = d_metadata["nevents_DAS"]

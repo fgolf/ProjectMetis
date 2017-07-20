@@ -2,6 +2,7 @@ import Utils
 from CMSSWTask import CMSSWTask
 from Sample import DirectorySample
 from Path import Path
+from statsparser import write_web_summary
 
 lhe = CMSSWTask(
         sample = DirectorySample(
@@ -50,6 +51,14 @@ miniaod = CMSSWTask(
         cmssw_version = "CMSSW_8_0_21",
         )
 
-p = Path([lhe,raw,aod,miniaod])
-p.process()
+# p = Path([lhe,raw,aod,miniaod])
+# p.process()
+total_summary = {}
+for task in [lhe,raw,aod,miniaod]:
+    task.process()
+    summary = task.get_task_summary()
+    total_summary[task.get_sample().get_datasetname()] = summary
 
+    summary = task.get_task_summary()
+
+write_web_summary(data=total_summary)
