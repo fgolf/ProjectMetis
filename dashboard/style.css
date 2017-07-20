@@ -117,10 +117,12 @@ a:link, a:visited {
     text-decoration: none;
 }
 a:hover {
-    color: #FF3333; 
+    /* color: #FF3333; */ 
+    color: #6666FF; 
 }
 a:active {
-    color: #FF8080; 
+    /* color: #FF8080; */ 
+    color: #9999FF; 
 }
 
 /* INPUT BOXES */
