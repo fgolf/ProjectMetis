@@ -51,14 +51,14 @@ body {
     font-size: 80%;
     float: left;
     margin-left:10px;
-    margin-top:5px;
+    margin-top:1px;
 }
 .pbartextright{
     /* position: relative; */
     font-size: 80%;
     float: right;
     margin-right:7px;
-    margin-top:5px;
+    margin-top:4px;
 }
 #container {
     padding: 10px 10px 10px 10px;
@@ -88,10 +88,14 @@ body {
 .details {
     /* font-size: 100%; */
     /* white-space: pre-wrap; */
-    outline: 1px solid #bbb;
+    display: inline-block;
+    border: 1px solid #bbb;
+    /* background: #efefef; */
     /* padding: 3px; */
     /* margin: 3px; */
     padding: 1px 5px 1px 5px;
+    border-radius: 5px;
+    /* border: 2px solid #73AD21; */
 }
 pre {
     white-space: pre-wrap;
