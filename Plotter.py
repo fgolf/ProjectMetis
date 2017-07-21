@@ -78,19 +78,27 @@ def get_json_files(logObjPile, condor_jobs, ftype, usrpath):
 
 #Plotting Functions
 #Sets plot title and axis labels, shows graph
-def set_graph_info(title, xlabel, ylabel):
+def set_graph_info(uniquename, xlabel, ylabel, title="", keys=[]):
 
     plt.title("")
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    if title: plt.title(title,fontsize=18)
+    plt.xlabel(xlabel,fontsize=18)
+    plt.ylabel(ylabel,fontsize=18)
+    plt.tight_layout()
 
-    split_title = title.split('/')
-    file_title = ''
-    for wrd in split_title:
-        if wrd != '':
-            file_title += (wrd + '_')
+    uniquename = uniquename.replace("/","_")[1:]
+    # split_title = uniquename.split('/')
+    # file_title = ''
+    # for wrd in split_title:
+    #     if wrd != '':
+    #         file_title += (wrd + '_')
     
-    pltpath = ('plots/' + file_title + xlabel + '_vs_' + ylabel + '.png')
+    pltpath = "plots/{0}_{1}.png".format(uniquename, "_".join(keys))
+    # if title:
+    #     pltpath = ('plots/' + uniquename + "_" + title + '.png')
+    # else:
+    #     pltpath = ('plots/' + uniquename + "_" + xlabel + '_vs_' + ylabel + '.png')
+    # print title, pltpath
 
     if not os.path.exists("plots/"):
         os.mkdir("plots/")
@@ -153,30 +161,29 @@ def plot_1DHist(logObjPile, title, xkey, bins):
 
     return set_graph_info(title, xkey, "") 
 
-def plot_2DHist(logObjPile, title, xkey, ykey, bins, norm_toggle):
+def plot_2DHist(logObjPile, uniquename, keypair, nbins=50, normx=True, scaley=1., \
+       shortname="dummy", title="", xtitle="", ytitle="", colorbar=True):
     #Get data
-    x, y = get_data_2D(logObjPile, xkey, ykey)
+    x, y = get_data_2D(logObjPile, keypair[0], keypair[1])
+    x = np.array(x)
+    y = np.array(y)
 
-    if not x: return None
+    if not len(x): return None
     
-    if norm_toggle == 1:
-        max_x = float(max(x))
-        counter = 0
-        for num in x:
-            x[counter] = (num/max_x)
-            counter += 1
-
+    if normx: x /= np.max(x)
+    y *= scaley
 
     #Import Colors
     from matplotlib.colors import LogNorm
 
     #Create Heatmap
-    plt.hist2d(x, y, bins = bins, norm = LogNorm())
+    plt.hist2d(x, y, bins = nbins, norm = LogNorm())
 
     #Plot Heatmap
-    plt.colorbar()
+    if colorbar:
+        plt.colorbar()
 
-    return set_graph_info(title, xkey, ykey)
+    return set_graph_info(uniquename, xtitle, ytitle, title=title, keys=keypair)
 
 def plot_Profile(logObjPile, title, xkey, ykey, bins, norm_toggle):
     #Get data
