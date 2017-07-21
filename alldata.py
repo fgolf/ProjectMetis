@@ -55,6 +55,16 @@ if __name__ == "__main__":
              "/DoubleEG/Run2017B-PromptReco-v2/MINIAOD",
              "/HTMHT/Run2017B-PromptReco-v2/MINIAOD",
 
+             "/MuonEG/Run2017C-PromptReco-v1/MINIAOD",
+             "/SingleElectron/Run2017C-PromptReco-v1/MINIAOD",
+             "/MET/Run2017C-PromptReco-v1/MINIAOD",
+             "/SinglePhoton/Run2017C-PromptReco-v1/MINIAOD",
+             "/SingleMuon/Run2017C-PromptReco-v1/MINIAOD",
+             "/DoubleMuon/Run2017C-PromptReco-v1/MINIAOD",
+             "/JetHT/Run2017C-PromptReco-v1/MINIAOD",
+             "/DoubleEG/Run2017C-PromptReco-v1/MINIAOD",
+             "/HTMHT/Run2017C-PromptReco-v1/MINIAOD",
+
             ]
 
     for i in range(1000):
@@ -73,6 +83,9 @@ if __name__ == "__main__":
             elif "2017B-PromptReco-v1" in dsname: 
                 cmsswver = "CMSSW_9_2_5_patch1"
                 tarfile = "/nfs-7/userdata/libCMS3/lib_CMS4_V00-00-04.tar.gz"
+            elif "2017C-PromptReco-v1" in dsname: 
+                cmsswver = "CMSSW_9_2_6"
+                tarfile = "/nfs-7/userdata/libCMS3/lib_CMS4_V00-00-05.tar.gz"
             
 
             task = CMSSWTask(
