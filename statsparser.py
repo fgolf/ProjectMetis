@@ -122,9 +122,7 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
             }
     with open("web_summary.json", 'w') as fhout:
         json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
-    Utils.do_cmd("cp web_summary.json {}".format(webdir))
-    Utils.do_cmd("mkdir -p plots/* {}/plots/".format(webdir))
-    Utils.do_cmd("cp plots/* {}/plots/".format(webdir))
+    Utils.update_dashboard(webdir=webdir, jsonfile="web_summary.json")
         
 
 if __name__ == "__main__": 

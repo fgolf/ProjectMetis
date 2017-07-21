@@ -22,8 +22,12 @@ def time_it(method):
 
     return timed
 
-def do_cmd(cmd, returnStatus=False):
-    status, out = commands.getstatusoutput(cmd)
+def do_cmd(cmd, returnStatus=False, dryRun=False):
+    if dryRun:
+        print "dry run: {}".format(cmd)
+        status, out = 1, ""
+    else:
+        status, out = commands.getstatusoutput(cmd)
     if returnStatus: return status, out
     else: return out
 
@@ -223,6 +227,15 @@ def make_tarball(fname):
     ut.close()
     return os.path.abspath(fname)
 
+def update_dashboard(webdir=None, jsonfile=None):
+    if not webdir:
+        raise Exception("Um, we need a web directory, dude.")
+    if not os.path.exists(webdir):
+        do_cmd("mkdir -p {}/plots/".format(webdir), dryRun=False)
+        do_cmd("cp plots/* {}/plots/".format(webdir), dryRun=False)
+        do_cmd("cp -rp dashboard/* {}/".format(webdir), dryRun=False)
+    if jsonfile and os.path.exists(jsonfile):
+        do_cmd("cp {} {}/".format(jsonfile, webdir), dryRun=False)
 
 
 if __name__ == "__main__":
