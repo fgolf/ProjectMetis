@@ -17,6 +17,31 @@ var adminMode = false;
 //     });
 // });
 
+// So you can do array.sum(keyname)
+Array.prototype.sum = function (prop) {
+    var total = 0;
+    for ( var i = 0, _len = this.length; i < _len; i++ ) {
+        total += this[i][prop]
+    }
+    return total;
+}
+// So you can do array.sum(keyname)
+Array.prototype.sum2 = function (prop, prop2) {
+    var total = 0;
+    for ( var i = 0, _len = this.length; i < _len; i++ ) {
+        total += this[i][prop][prop2];
+    }
+    return total;
+}
+// console.log("Hello, {0}!".format("World"))
+String.prototype.format = function() {
+  a = this;
+  for (k in arguments) {
+    a = a.replace("{" + k + "}", arguments[k])
+  }
+  return a
+}
+
 $(function() {
 
 
@@ -343,7 +368,8 @@ function fillDOM(data) {
         if (show_plots && ("plots" in bad) && (bad["plots"].length > 0)) {
             for (var iplot = 0; iplot < bad["plots"].length; iplot++) {
                 var plot = bad["plots"][iplot];
-                beforedetails += "<img src='"+plot+"' width='30%'/>";
+                if (iplot > 0 && iplot%3==0) beforedetails += "<br>";
+                beforedetails += "<img src='"+plot+"' width='25%'/>";
             }
             beforedetails += "\n";
         }
@@ -354,16 +380,51 @@ function fillDOM(data) {
     }
 
 
+    updateSummary(data);
     // drawChart();
+}
+
+function updateSummary(data) {
+    // var total_dict = {};
+    for(var i = 0; i < data["tasks"].length; i++) {
+        var sample = data["tasks"][i];
+        var bad = data["tasks"][i]["bad"] || {};
+        var general = data["tasks"][i]["general"];
+        // console.log(bad);
+        // total_dict += general;
+    }
+    // console.log(general);
+
+    var nevents_total = data["tasks"].sum2("general","nevents_total");
+    var nevents_done = data["tasks"].sum2("general","nevents_done");
+    var njobs_done = data["tasks"].sum2("general","njobs_done");
+    var njobs_total = data["tasks"].sum2("general","njobs_total");
+
+    var buff = "";
+    buff += "<table>";
+    buff += "<tr><th align='left'>Nevents (total)</th> <td align='right'>{0}</td></tr>".format(nevents_total);
+    buff += "<tr><th align='left'>Nevents (done)</th> <td align='right'>{0}</td></tr>".format(nevents_done);
+    buff += "<tr><th align='left'>Nevents (missing)</th> <td align='right'>{0}</td></tr>".format(nevents_total-nevents_done);
+    buff += "<tr><th></th><td></td></tr>";
+    buff += "<tr><th align='left'>Njobs (total)</th> <td align='right'>{0}</td></tr>".format(njobs_total);
+    buff += "<tr><th align='left'>Njobs (done)</th> <td align='right'>{0}</td></tr>".format(njobs_done);
+    buff += "<tr><th align='left'>Njobs (running)</th> <td align='right'>{0}</td></tr>".format(njobs_total-njobs_done);
+    buff += "<tr><th></th><td></td></tr>";
+    buff += "<tr><th align='left'>Event completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*nevents_done/nevents_total,1));
+    buff += "<tr><th align='left'>Job completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*njobs_done/njobs_total,1));
+    buff += "</table>";
+    $("#summary").html(buff);
+
+
 }
 
 function expandAll() {
     // do it this way because one guy may be reversed
     if(detailsVisible) {
-        $("#toggle_all").text("show details");
+        $("#toggle_all").text("expand all");
         $("[id^=details_]").slideUp(100);
     } else {
-        $("#toggle_all").text("hide details")
+        $("#toggle_all").text("collapse all")
         $("[id^=details_]").slideDown(100);
     }
     detailsVisible = !detailsVisible;
