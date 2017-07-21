@@ -28,8 +28,8 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
 
         tasksummary = summaries[dsname]
         sample = summaries[dsname]["jobs"]
-        cms4nevts = 0
-        dbsnevts = summaries[dsname]["queried_nevents"]
+        outnevents = 0
+        queriednevents = summaries[dsname]["queried_nevents"]
         logs_to_plot = []
         bad_jobs = {}
         njobs = len(sample.keys())
@@ -40,7 +40,7 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
             is_done  = job["output_exists"] and not job["is_on_condor"]
 
             if is_done:
-                cms4nevts += job["output"][1]
+                outnevents += job["output"][1]
                 njobsdone += 1
                 continue
 
@@ -96,9 +96,9 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
 
 
 
-        if dbsnevts != cms4nevts:
+        if queriednevents != outnevents:
             do_print("Dataset {0} is missing {1} events (DBS: {2}, CMS4: {3})".format(
-                    dsname, dbsnevts-cms4nevts, dbsnevts, cms4nevts
+                    dsname, queriednevents-outnevents, queriednevents, outnevents
                     ))
 
         d_task = {}
@@ -106,8 +106,8 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
         del d_task["general"]["jobs"]
         d_task["general"].update({
                 "dataset": dsname,
-                "nevents_total": dbsnevts,
-                "nevents_done": cms4nevts,
+                "nevents_total": queriednevents,
+                "nevents_done": outnevents,
                 "njobs_total": njobs,
                 "njobs_done": njobsdone,
                 "status": "running",
@@ -116,7 +116,7 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
         d_task["bad"] = {
                 "plots": plot_paths,
                 "jobs_not_done": bad_jobs,
-                "missing_events": dbsnevts-cms4nevts,
+                "missing_events": queriednevents-outnevents,
         }
         tasks.append(d_task)
 
