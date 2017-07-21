@@ -78,9 +78,9 @@ function handleDuckMode() {
     $( ".mainlogo" ).on('contextmenu dblclick',function() { 
         if(duckMode) {
             duckMode = false;
-            $(".mainlogo").attr('src', 'images/crab.png');
+            $(".mainlogo").attr('src', 'images/workflowtransparent.png');
             $("#container").css("background", "");
-            $("#firstTitle").text("auto");
+            $("#firstTitle").text("Project");
             $(".duckAudio").trigger('pause');
         } else {
             duckMode = true;
