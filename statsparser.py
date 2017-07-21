@@ -54,6 +54,7 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
             do_print("   --> {0} inputs with a total of {1} events".format(len(inputs),nevents))
 
             last_error = ""
+            last_log = ""
             if retries >= 1:
                 do_print("   --> Previous condor logs:")
                 for ijob in range(len(condor_jobs)-1):
@@ -62,13 +63,14 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
                     do_print("       - {0}".format(errlog))
                     logs_to_plot.append(outlog)
                 last_error = LogParser.infer_error(errlog)
+                last_log = outlog
 
             bad_jobs[iout] = {
                     "retries":retries,
                     "inputs":len(inputs),
                     "events":nevents,
                     "last_error": last_error,
-                    "last_log": logs_to_plot[-1],
+                    "last_log": last_log,
                     }
 
         plot_paths = []
@@ -77,14 +79,16 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
             to_plot_json = {fname:LogParser.log_parser(fname) for fname in logs_to_plot}
 
             # CPU
-            plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "usr", 75, 1))
-            plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "sys", 75, 1))
-            # Network
-            plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "send", 75, 1))
-            plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "recv", 75, 1))
-            # Memory
-            plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "used_mem", 75, 1))
-            plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "buff", 75, 1))
+            if to_plot_json:
+                plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "usr", 75, 1))
+                plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "sys", 75, 1))
+                # Network
+                plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "send", 75, 1))
+                plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "recv", 75, 1))
+                # Memory
+                plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "used_mem", 75, 1))
+                plot_paths.append(plotter.plot_2DHist(to_plot_json, dsname, "epoch", "buff", 75, 1))
+                plot_paths = [pp for pp in plot_paths if pp]
 
 
 

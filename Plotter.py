@@ -156,6 +156,8 @@ def plot_1DHist(logObjPile, title, xkey, bins):
 def plot_2DHist(logObjPile, title, xkey, ykey, bins, norm_toggle):
     #Get data
     x, y = get_data_2D(logObjPile, xkey, ykey)
+
+    if not x: return None
     
     if norm_toggle == 1:
         max_x = float(max(x))
