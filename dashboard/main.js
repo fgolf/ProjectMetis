@@ -44,6 +44,15 @@ String.prototype.format = function() {
 
 $(function() {
 
+    // https://stackoverflow.com/questions/2419749/get-selected-elements-outer-html
+    // when selecting a div.html() with jquery, you lose the text for the div itself
+    // (you only get what's inside a div, so we need outerHTML to get everything)
+    (function($) {
+        $.fn.outerHTML = function() {
+            return $(this).clone().wrap('<div></div>').parent().html();
+        };
+    })(jQuery);
+
 
     loadJSON();
     setInterval(loadJSON, refreshSecs*1000);
@@ -233,9 +242,8 @@ function getProgress(general) {
 
 }
 
-function doSendAction(type, isample) {
-    var dataset = alldata["tasks"][isample]["dataset"]
-    var shortname = dataset.split("/")[1];
+function doSendAction(type, dsescaped) {
+    var dataset = dsescaped.replace(/\_/g,"/");
     console.log("action,isample: " + type + " " + isample);
 
     if (!confirm('Are you sure you want to do the action: ' + type)) return;
@@ -287,24 +295,27 @@ function setUpDOM(data) {
     for(var i = 0; i < data["tasks"].length; i++) {
         var general = data["tasks"][i]["general"];
         var toappend = "";
-        toappend += "<br>";
-        toappend += "<a href='#/' class='thick' onClick=\"$('#details_"+i+"').slideToggle(100)\">";
+        var id = general["dataset"].replace(/\//g,"_");
+        // toappend += "<br>\n";
+        toappend += "<div id='"+id+"' class='sample'>\n";
+        toappend += "<a href='#/' class='thick' onClick=\"$('#details_"+id+"').slideToggle(100)\">";
         if(general["type"] == "BABY") {
             toappend += "<span style='color: purple'>[&#128700; "+general["baby"]["analysis"]+" "+general["baby"]["baby_tag"]+"]</span> ";
         } else if (general["type"] == "CMS4") {
             toappend += "<span style='color: purple'>[CMS4]</span> ";
         }
         toappend += general["dataset"]+"</a>";
-        toappend += "<div class='pbar' id='pbar_"+i+"'>";
-        toappend +=      "<span id='pbartextleft_"+i+"' class='pbartextleft'></span>";
-        toappend +=      "<span id='pbartextright_"+i+"' class='pbartextright'></span>";
-        toappend += "</div>";
-        toappend += "<div id='details_"+i+"' style='display:none;' class='details'></div>";
+        toappend += "<div class='pbar' id='pbar_"+id+"'>";
+        toappend +=      "<span id='pbartextleft_"+id+"' class='pbartextleft'></span>";
+        toappend +=      "<span id='pbartextright_"+id+"' class='pbartextright'></span>";
+        toappend += "</div>\n";
+        toappend += "<div id='details_"+id+"' style='display:none;' class='details'></div>\n";
+        toappend += "</div>\n";
 
         container.append(toappend);
 
-        $( "#pbar_"+i ).progressbar({max: 100});
-        $("#pbar_"+i).progressbar("option","value",0);
+        $( "#pbar_"+id ).progressbar({max: 100});
+        $("#pbar_"+id).progressbar("option","value",0);
     }
 }
 
@@ -322,6 +333,7 @@ function fillDOM(data) {
         var sample = data["tasks"][i];
         var bad = data["tasks"][i]["bad"] || {};
         var general = data["tasks"][i]["general"];
+        var id = general["dataset"].replace(/\//g,"_");
 
         var progress = getProgress(general);
         var pct = Math.round(progress.pct);
@@ -341,24 +353,24 @@ function fillDOM(data) {
             towrite = "open, "+towrite;
             color = "#ffaa3b";
         }
-        $("#pbar_"+i).progressbar("value", pct);
-        $("#pbar_"+i).find(".ui-progressbar-value").css({"background": color});
-        $("#pbartextright_"+i).html(towrite);
-        $("#pbartextleft_"+i).html(""); 
+        $("#pbar_"+id).progressbar("value", pct);
+        $("#pbar_"+id).find(".ui-progressbar-value").css({"background": color});
+        $("#pbartextright_"+id).html(towrite);
+        $("#pbartextleft_"+id).html(""); 
 
         if(adminMode) {
             var buff = "";
-            buff += "<a href='#/' onClick='doSendAction(\"kill\","+i+")' title='kill job (not enabled)'> &#9762; </a>  ";
+            buff += "<a href='#/' onClick='doSendAction(\"kill\","+id+")' title='kill job (not enabled)'> &#9762; </a>  ";
             if(general["type"] == "CMS3") {
-                buff += "<a href='#/' onClick='doSendAction(\"skip_tail\","+i+")' title='skip tail CRAB jobs'> &#9986; </a> ";
-                buff += "<a href='#/' onClick='doSendAction(\"repostprocess\","+i+")' title='re-postprocess'> &#128296; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"skip_tail\","+id+")' title='skip tail CRAB jobs'> &#9986; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"repostprocess\","+id+")' title='re-postprocess'> &#128296; </a> ";
             } else {
-                buff += "<a href='#/' onClick='doSendAction(\"baby_skip_tail\","+i+")' title='skip rest of baby jobs'> &#9986; </a> ";
-                buff += "<a href='#/' onClick='doSendAction(\"baby_remerge\","+i+")' title='remerge'> &#128290; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"baby_skip_tail\","+id+")' title='skip rest of baby jobs'> &#9986; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"baby_remerge\","+id+")' title='remerge'> &#128290; </a> ";
             }
-            buff += "<a href='#/' onClick='doSendAction(\"email_done\","+i+")' title='send email when done'> &#9993; </a> ";
+            buff += "<a href='#/' onClick='doSendAction(\"email_done\","+id+")' title='send email when done'> &#9993; </a> ";
 
-            $("#pbartextleft_"+i).html(buff);
+            $("#pbartextleft_"+id).html(buff);
         }
 
         var beforedetails = "";
@@ -375,13 +387,27 @@ function fillDOM(data) {
         }
 
         var jsStr = syntaxHighlight(JSON.stringify(sample, undefined, 4));
-        $("#details_"+i).html(beforedetails+"<pre>" + jsStr + "</pre>"+afterdetails);
+        $("#details_"+id).html(beforedetails+"<pre>" + jsStr + "</pre>"+afterdetails);
 
     }
 
 
     updateSummary(data);
     // drawChart();
+    //
+
+    // var divs = $(".sample");
+    // divs.sort(function(a, b){
+    //     // return $(a).attr("id")>$(b).attr("id");
+    //     return $(a).find("div[id^='pbar']").progressbar("value") > $(b).find("div[id^='pbar']").progressbar("value");
+    // });
+    // var buff = "";
+    // for (var i = 0; i < divs.length; i++) {
+    //     buff += divs.eq(i).outerHTML();
+    // }
+    // $("#section_1").html(buff);
+
+
 }
 
 function updateSummary(data) {
