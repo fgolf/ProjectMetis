@@ -58,6 +58,7 @@ class CondorTask(Task):
         # Some storage params
         self.prepared_inputs = False
         self.job_submission_history = {}
+        self.queried_nevents = -1
 
         # Make a unique name from this task for pickling purposes
         self.unique_name = kwargs.get("unique_name", "{0}_{1}_{2}".format(self.get_task_name(),self.sample.get_datasetname().replace("/","_")[1:],self.tag))
@@ -75,7 +76,7 @@ class CondorTask(Task):
         # Declare which variables we want to backup to avoid recalculation
         return ["io_mapping","executable_path",\
                      "package_path","prepared_inputs", \
-                     "job_submission_history","global_tag"]
+                     "job_submission_history","global_tag","queried_nevents"]
 
 
     def handle_done_output(self, out):
@@ -103,10 +104,11 @@ class CondorTask(Task):
         original_nextidx = nextidx+0
         # if dataset is "closed" and we already have some inputs, then
         # don't bother doing get_files() again (wastes a DBS query)
-        if len(already_mapped_inputs) > 0 and not self.open_dataset:
+        if (len(already_mapped_inputs) > 0 and not self.open_dataset):
             files  = []
         else:
             files = [f for f in self.sample.get_files() if f.get_name() not in already_mapped_inputs]
+            self.queried_nevents = self.sample.get_nevents()
 
         flush = (not self.open_dataset) or flush
         prefix, suffix = self.output_name.rsplit(".",1)
@@ -251,7 +253,6 @@ class CondorTask(Task):
         if self.complete():
             self.finalize()
 
-
         self.backup()
 
     def finalize(self):
@@ -387,7 +388,7 @@ class CondorTask(Task):
 
         d_summary = {
                 "jobs": d_jobs,
-                "queried_nevents": self.get_sample().get_nevents(),
+                "queried_nevents": (self.queried_nevents if not self.open_dataset else self.sample.get_nevents()),
                 "open_dataset": self.open_dataset,
                 "output_dir": self.output_dir,
                 "tag": self.tag,

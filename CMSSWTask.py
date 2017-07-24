@@ -35,7 +35,7 @@ class CMSSWTask(CondorTask):
         # Declare which variables we want to backup to avoid recalculation
         return ["io_mapping","executable_path","pset_path", \
                      "package_path","prepared_inputs", \
-                     "job_submission_history","global_tag"]
+                     "job_submission_history","global_tag","queried_nevents"]
 
     def handle_done_output(self, out):
         out.set_status(Constants.DONE)
