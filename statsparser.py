@@ -65,6 +65,7 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
                 last_error = LogParser.infer_error(errlog)
                 last_log = outlog
 
+            if retries < 1: continue
             bad_jobs[iout] = {
                     "retries":retries,
                     "inputs":len(inputs),
@@ -124,6 +125,16 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
             "tasks": tasks,
             "last_updated": time.time(),
             }
+    # open the current json and add any tasks that are already in there
+    # but which are not in the current set of tasks (so that we don't nuke
+    # the summaries for multiple instances of metis running on different
+    # datasets)
+    with open("web_summary.json", 'r') as fhin:
+        data_in = json.load(fhin)
+        for task in data_in.get("tasks",[]):
+            if task["general"]["dataset"] not in [t["general"]["dataset"] for t in tasks]:
+                d_web_summary["tasks"].append(task)
+                
     with open("web_summary.json", 'w') as fhout:
         json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
     Utils.update_dashboard(webdir=webdir, jsonfile="web_summary.json")
