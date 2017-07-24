@@ -54,7 +54,6 @@ $(function() {
         };
     })(jQuery);
 
-
     loadJSON();
     setInterval(loadJSON, refreshSecs*1000);
 
@@ -62,9 +61,6 @@ $(function() {
     handleOtherTwiki();
     handleSubmitButton();
     handleAdminMode();
-
-    $( document ).tooltip({ track: true });
-
 
 });
 
@@ -138,7 +134,62 @@ function loadJSON() {
             setUpDOM(data);
         }
         fillDOM(data); 
+        afterFillDOM();
     });
+}
+
+function afterFillDOM() {
+    // console.log($('.forqtooltip_dis'));
+
+    // $('.fortooltip').each(function() {
+    //     $(this).tooltip({ 
+    //         track: true 
+    //     });
+    // });
+
+    $('.forqtooltip_dis').each(function() {
+        $(this).qtip({
+
+            content: {
+                text: function(event, api) {
+                    $.ajax({
+                        url: api.elements.target.attr('href') // Use href attribute as URL
+                    })
+                    .then(function(content) {
+                        // Set the tooltip content upon successful retrieval
+                        var todisplay = content["response"]["payload"];
+                        todisplay = syntaxHighlight(JSON.stringify(todisplay, undefined, 4));
+                        console.log(todisplay);
+                        api.set('content.text', "<pre>"+todisplay+"</pre>");
+                    }, function(xhr, status, error) {
+                        // Upon failure... set the tooltip content to error
+                        api.set('content.text', status + ': ' + error);
+                    });
+        
+                    return 'Loading...'; // Set some initial text
+                }
+            },
+
+            position: {
+                target: 'mouse', // Track the mouse as the positioning target
+                adjust: { x: 5, y: 5 } // Offset it slightly from under the mouse
+            },
+        });
+    });
+
+    $('.forqtooltip').each(function() {
+        $(this).qtip({
+
+            content: {
+                text: $(this).attr("title")
+            },
+            position: {
+                target: 'mouse', // Track the mouse as the positioning target
+                adjust: { x: 5, y: 5 } // Offset it slightly from under the mouse
+            },
+        });
+    });
+
 }
 
 function doTwiki(type) {
@@ -352,7 +403,7 @@ function fillDOM(data) {
         }
 
 
-        var towrite = general["status"] + " <span title='"+progress.done+"/"+progress.total+"'>[" + pct + "%]</span>";
+        var towrite = general["status"] + " <span class='forqtooltip' title='"+progress.done+"/"+progress.total+"'>[" + pct + "%]</span>";
         // if it's an open dataset, use a universal color and modify text
         if (general["open_dataset"]) {
             towrite = "open, "+towrite;
@@ -394,10 +445,10 @@ function fillDOM(data) {
         var jsStr = syntaxHighlight(JSON.stringify(sample, undefined, 4));
 
         // turn dataset into a DIS link
-        var link = "http://uaf-8.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
-        jsStr = jsStr.replace("\"dataset\":", " <a href='"+link+"' style='text-decoration: underline'>dataset</a>: ");
-
-
+        // var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
+        var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/handler.py?type=basic&short=short&query="+general["dataset"];
+        jsStr = jsStr.replace("\"dataset\":", " <a href='"+link+"' class='forqtooltip_dis' style='text-decoration: underline'>dataset</a>: ");
+        
         $("#details_"+id).html(beforedetails+"<pre>" + jsStr + "</pre>"+afterdetails);
 
     }
