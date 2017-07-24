@@ -152,8 +152,16 @@ function afterFillDOM() {
 
             content: {
                 text: function(event, api) {
+                    var context = api.elements.target.context;
+                    var hostname = context.hostname;
+                    var pathname = context.pathname;
+                    var search = context.search;
+                    var protocol = context.protocol;
+                    var url = protocol+"//"+hostname+pathname+"handler.py"+search;
+                    // var url = "http://uaf-8.t2.ucsd.edu/~namin/makers/disMaker/handler.py?type=basic&short=short&query=/JetHT/Run2017C-PromptReco-v1/MINIAOD";
                     $.ajax({
-                        url: api.elements.target.attr('href') // Use href attribute as URL
+                        // url: api.elements.target.attr('href') // Use href attribute as URL
+                        url: url
                     })
                     .then(function(content) {
                         // Set the tooltip content upon successful retrieval
@@ -446,7 +454,7 @@ function fillDOM(data) {
 
         // turn dataset into a DIS link
         // var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
-        var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/handler.py?type=basic&short=short&query="+general["dataset"];
+        var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
         jsStr = jsStr.replace("\"dataset\":", " <a href='"+link+"' class='forqtooltip_dis' style='text-decoration: underline'>dataset</a>: ");
         
         $("#details_"+id).html(beforedetails+"<pre>" + jsStr + "</pre>"+afterdetails);
