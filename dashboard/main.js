@@ -3,6 +3,7 @@ var jsonFile = "web_summary.json";
 var baseDir = '/home/users/namin/2017/fourtop/babymaking/batch/NtupleTools/AutoTwopler/';
 var refreshSecs = 10*60;
 var detailsVisible = false;
+var sortedAZ = false;
 var duckMode = false;
 var adminMode = false;
 
@@ -244,7 +245,7 @@ function getProgress(general) {
 
 function doSendAction(type, dsescaped) {
     var dataset = dsescaped.replace(/\_/g,"/");
-    console.log("action,isample: " + type + " " + isample);
+    console.log("action,dataset: " + type + " " + dataset);
 
     if (!confirm('Are you sure you want to do the action: ' + type)) return;
 
@@ -292,6 +293,8 @@ function syntaxHighlight(json) {
 function setUpDOM(data) {
     var container = $("#section_1");
     container.empty(); // clear the section
+
+
     for(var i = 0; i < data["tasks"].length; i++) {
         var general = data["tasks"][i]["general"];
         var toappend = "";
@@ -321,6 +324,7 @@ function setUpDOM(data) {
 
 function fillDOM(data) {
     alldata = data;
+    // console.log("here: "+alldata);
 
     var date = new Date(data["last_updated"]*1000); // ms to s
     var hours = date.getHours();
@@ -328,6 +332,7 @@ function fillDOM(data) {
     var seconds = "0" + date.getSeconds();
     var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
     $("#last_updated").text("Last updated at " + date.toLocaleTimeString() + " on " + date.toLocaleDateString());
+
 
     for(var i = 0; i < data["tasks"].length; i++) {
         var sample = data["tasks"][i];
@@ -360,15 +365,15 @@ function fillDOM(data) {
 
         if(adminMode) {
             var buff = "";
-            buff += "<a href='#/' onClick='doSendAction(\"kill\","+id+")' title='kill job (not enabled)'> &#9762; </a>  ";
+            buff += "<a href='#/' onClick='doSendAction(\"kill\",\""+id+"\")' title='kill job (not enabled)'> &#9762; </a>  ";
             if(general["type"] == "CMS3") {
-                buff += "<a href='#/' onClick='doSendAction(\"skip_tail\","+id+")' title='skip tail CRAB jobs'> &#9986; </a> ";
-                buff += "<a href='#/' onClick='doSendAction(\"repostprocess\","+id+")' title='re-postprocess'> &#128296; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"skip_tail\",\""+id+"\")' title='skip tail CRAB jobs'> &#9986; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"repostprocess\",\""+id+"\")' title='re-postprocess'> &#128296; </a> ";
             } else {
-                buff += "<a href='#/' onClick='doSendAction(\"baby_skip_tail\","+id+")' title='skip rest of baby jobs'> &#9986; </a> ";
-                buff += "<a href='#/' onClick='doSendAction(\"baby_remerge\","+id+")' title='remerge'> &#128290; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"baby_skip_tail\",\""+id+"\")' title='skip rest of baby jobs'> &#9986; </a> ";
+                buff += "<a href='#/' onClick='doSendAction(\"baby_remerge\",\""+id+"\")' title='remerge'> &#128290; </a> ";
             }
-            buff += "<a href='#/' onClick='doSendAction(\"email_done\","+id+")' title='send email when done'> &#9993; </a> ";
+            buff += "<a href='#/' onClick='doSendAction(\"email_done\",\""+id+"\")' title='send email when done'> &#9993; </a> ";
 
             $("#pbartextleft_"+id).html(buff);
         }
@@ -387,6 +392,12 @@ function fillDOM(data) {
         }
 
         var jsStr = syntaxHighlight(JSON.stringify(sample, undefined, 4));
+
+        // turn dataset into a DIS link
+        var link = "http://uaf-8.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
+        jsStr = jsStr.replace("\"dataset\":", " <a href='"+link+"' style='text-decoration: underline'>dataset</a>: ");
+
+
         $("#details_"+id).html(beforedetails+"<pre>" + jsStr + "</pre>"+afterdetails);
 
     }
@@ -396,10 +407,51 @@ function fillDOM(data) {
     // drawChart();
     //
 
+
+
+
+}
+
+function sortSamples(alphabetical=false) {
+
+    // console.log(alldata);
+    alldata["tasks"].sort(function (a,b) {
+        var cmp = 0;
+        var ageneral = a["general"]; 
+        var bgeneral = b["general"]; 
+        if (alphabetical) {
+            cmp = ageneral["dataset"] > bgeneral["dataset"];
+        } else {
+            // console.log(ageneral);
+            var aprogress = getProgress(ageneral).pct;
+            var bprogress = getProgress(bgeneral).pct;
+            cmp = aprogress > bprogress;
+        }
+        if (cmp) return 1;
+        else return -1;
+    });
+    setUpDOM(alldata);
+    fillDOM(alldata);
+
     // var divs = $(".sample");
     // divs.sort(function(a, b){
-    //     // return $(a).attr("id")>$(b).attr("id");
-    //     return $(a).find("div[id^='pbar']").progressbar("value") > $(b).find("div[id^='pbar']").progressbar("value");
+    //     var comp = 0;
+    //     if (alphabetical) comp = $(a).attr("id")>$(b).attr("id");
+    //     else {
+    //         // XXX NOTE
+    //         // after we sort once, we can't do it again
+    //         // because when we do $section1.html(blah), we kill all the 
+    //         // progress bar objects, so ("value") doesn't work anymore
+    //         // console.log($(a).find("div[id^='pbar']"));
+    //         // console.log($(b).find("div[id^='pbar']"));
+    //         // console.log($(a).find("div[id^='pbar']").progressbar("value"));
+    //         comp = $(a).find("div[id^='pbar']").progressbar("value") > $(b).find("div[id^='pbar']").progressbar("value");
+    //     }
+    //     if (comp) {
+    //         return 1;
+    //     } else {
+    //         return -1;
+    //     }
     // });
     // var buff = "";
     // for (var i = 0; i < divs.length; i++) {
@@ -407,7 +459,17 @@ function fillDOM(data) {
     // }
     // $("#section_1").html(buff);
 
+}
 
+function toggleSort() {
+    if(sortedAZ) {
+        $("#toggle_sort").text("sort %");
+    } else {
+        $("#toggle_sort").text("sort a-z")
+    }
+    sortedAZ = !sortedAZ;
+    console.log(sortedAZ);
+    sortSamples(!sortedAZ);
 }
 
 function updateSummary(data) {
@@ -436,8 +498,8 @@ function updateSummary(data) {
     buff += "<tr><th align='left'>Njobs (done)</th> <td align='right'>{0}</td></tr>".format(njobs_done);
     buff += "<tr><th align='left'>Njobs (running)</th> <td align='right'>{0}</td></tr>".format(njobs_total-njobs_done);
     buff += "<tr><th></th><td></td></tr>";
-    buff += "<tr><th align='left'>Event completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*nevents_done/nevents_total,1));
-    buff += "<tr><th align='left'>Job completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*njobs_done/njobs_total,1));
+    buff += "<tr><th align='left'>Event completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*100.0*nevents_done/nevents_total)/100);
+    buff += "<tr><th align='left'>Job completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*100.0*njobs_done/njobs_total)/100);
     buff += "</table>";
     $("#summary").html(buff);
 
