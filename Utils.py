@@ -230,7 +230,7 @@ def make_tarball(fname):
 def update_dashboard(webdir=None, jsonfile=None):
     if not webdir:
         raise Exception("Um, we need a web directory, dude.")
-    if not os.path.exists(webdir):
+    if not os.path.exists(os.path.expanduser(webdir)):
         do_cmd("mkdir -p {}/plots/".format(webdir), dryRun=False)
         do_cmd("cp plots/* {}/plots/".format(webdir), dryRun=False)
         do_cmd("cp -rp dashboard/* {}/".format(webdir), dryRun=False)
