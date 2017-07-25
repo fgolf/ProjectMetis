@@ -3,12 +3,13 @@ from CMSSWTask import CMSSWTask
 from Sample import DirectorySample
 from Path import Path
 from statsparser import write_web_summary
+import time
 
 lhe = CMSSWTask(
         sample = DirectorySample(
             location="/hadoop/cms/store/user/namin/lhe_Apr1/",
             globber="*seed6*.lhe",
-            dataset="/stop-stop/procv1/LHE",
+            dataset="/stop-stop/procv2/LHE",
             ),
         events_per_output = 20,
         total_nevents = 100,
@@ -51,14 +52,12 @@ miniaod = CMSSWTask(
         cmssw_version = "CMSSW_8_0_21",
         )
 
-# p = Path([lhe,raw,aod,miniaod])
-# p.process()
-total_summary = {}
-for task in [lhe,raw,aod,miniaod]:
-    task.process()
-    summary = task.get_task_summary()
-    total_summary[task.get_sample().get_datasetname()] = summary
-
-    summary = task.get_task_summary()
-
-write_web_summary(data=total_summary)
+for _ in range(25):
+    total_summary = {}
+    for task in [lhe,raw,aod,miniaod]:
+    # for task in [miniaod]:
+        task.process()
+        summary = task.get_task_summary()
+        total_summary[task.get_sample().get_datasetname()] = summary
+    write_web_summary(data=total_summary, webdir="~/public_html/dump/metis_test/")
+    time.sleep(600)
