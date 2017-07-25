@@ -113,6 +113,7 @@ class Sample(object):
             return False
             
     def do_update_dis(self):
+        self.logger.debug("Updating DIS")
         query_str = "dataset_name={},sample_type={},cms3tag={},gtag={},location={},nevents_in={},nevents_out={},xsec={},kfactor={},filter_eff={},timestamp={}".format(
            self.info["dataset"], self.info["tier"], self.info["tag"], self.info["gtag"], \
            self.info["location"], self.info["nevents_in"], self.info["nevents"], \
@@ -125,7 +126,7 @@ class Sample(object):
             response = dis.query(query_str, typ='update_snt')
             response = response["response"]["payload"]
             if "updated" in response and str(response["updated"]).lower() == "true": succeeded = True
-            self.logger.debug("updated DIS")
+            self.logger.debug("Updated DIS")
         except: pass
 
         if not succeeded:

@@ -160,7 +160,7 @@ def set_output_name(outputname):
         d_metadata["cmsswver"] = self.cmssw_version
         # NOTE this makes a DIS query every single time, cache it somehow
         # for closed datasets? or only make metadata once at the end?
-        d_metadata["nevents_DAS"] = self.get_sample().get_nevents()
+        d_metadata["nevents_DAS"] = done_nevents if not self.open_dataset else self.get_sample().get_nevents()
         d_metadata["nevents_merged"] = done_nevents
         d_metadata["finaldir"] = self.get_outputdir()
         d_metadata["efact"] = self.sample.info["efact"]
@@ -184,7 +184,6 @@ def set_output_name(outputname):
         return task_summary
 
     def update_dis(self, d_metadata):
-        self.logger.debug("Updating DIS")
         self.sample.info["nevents_in"] = d_metadata["nevents_DAS"]
         self.sample.info["nevents"] = d_metadata["nevents_merged"]
         self.sample.info["location"] = d_metadata["finaldir"]
