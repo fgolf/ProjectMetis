@@ -240,7 +240,7 @@ class DirectorySample(Sample):
         return self.info["files"]
 
     def get_nevents(self):
-        return self.info.get("nevts",-1)
+        return self.info.get("nevts",0)
 
     def get_globaltag(self):
         return self.info.get("gtag","dummy_gtag")
