@@ -58,7 +58,7 @@ class CondorTask(Task):
         # Some storage params
         self.prepared_inputs = False
         self.job_submission_history = {}
-        self.queried_nevents = -1
+        self.queried_nevents = 0
 
         # Make a unique name from this task for pickling purposes
         self.unique_name = kwargs.get("unique_name", "{0}_{1}_{2}".format(self.get_task_name(),self.sample.get_datasetname().replace("/","_")[1:],self.tag))
