@@ -232,14 +232,16 @@ def update_dashboard(webdir=None, jsonfile=None):
         raise Exception("Um, we need a web directory, dude.")
     if not os.path.exists(os.path.expanduser(webdir)):
         do_cmd("mkdir -p {}/plots/".format(webdir), dryRun=False)
-        do_cmd("cp plots/* {}/plots/".format(webdir), dryRun=False)
         do_cmd("cp -rp dashboard/* {}/".format(webdir), dryRun=False)
     if jsonfile and os.path.exists(jsonfile):
         do_cmd("cp {} {}/".format(jsonfile, webdir), dryRun=False)
+        do_cmd("cp plots/* {}/plots/".format(webdir), dryRun=False)
 
 
 if __name__ == "__main__":
     pass
+
+    make_tarball("cscval_v0.tar.gz")
 
     # from collections import Counter
     # jobs = condor_q(user="")
