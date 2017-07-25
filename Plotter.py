@@ -170,7 +170,7 @@ def plot_2DHist(logObjPile, uniquename, keypair, nbins=50, normx=True, scaley=1.
 
     if not len(x): return None
     
-    if normx: x /= np.max(x)
+    if normx: x /= max(np.max(x), 1)
     y *= scaley
 
     #Import Colors
