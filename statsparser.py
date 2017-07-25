@@ -112,12 +112,12 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
                 "njobs_total": njobs,
                 "njobs_done": njobsdone,
                 "status": "running",
-                "type": "CMS4",
+                "type": "CMSSW",
         })
         d_task["bad"] = {
                 "plots": plot_paths,
                 "jobs_not_done": bad_jobs,
-                "missing_events": queriednevents-outnevents,
+                "missing_events": max(queriednevents-outnevents,0),
         }
         tasks.append(d_task)
 
