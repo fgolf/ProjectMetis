@@ -18,6 +18,7 @@ class CMSSWTask(CondorTask):
         self.check_expectedevents = kwargs.get("check_expectedevents",True)
         self.is_data = kwargs.get("is_data",False)
         self.input_executable = kwargs.get("executable", "executables/condor_cmssw_exe.sh")
+        self.output_is_tree = kwargs.get("is_tree_output", True)
         # Pass all of the kwargs to the parent class
         super(CMSSWTask, self).__init__(**kwargs)
 
@@ -42,7 +43,7 @@ class CMSSWTask(CondorTask):
         self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
         # If MC and file is done, calculate negative events to use later for metadata
         # NOTE Can probably speed this up if it's not an NLO sample
-        if not self.is_data:
+        if not self.is_data and self.output_is_tree:
             self.logger.debug("Calculating negative events for this file")
             out.get_nevents_negative()
 
@@ -114,7 +115,7 @@ if hasattr(process,"eventMaker"):
     process.eventMaker.datasetName = cms.string('{dsname}')
     process.out.dropMetaData = cms.untracked.string("NONE")
     process.GlobalTag.globaltag = "{gtag}"
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+    process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 def set_output_name(outputname):
     for attr in dir(process):
@@ -148,7 +149,7 @@ def set_output_name(outputname):
         for ins, out in self.get_io_mapping():
             if out.get_status() != Constants.DONE: continue
             d_metadata["ijob_to_miniaod"][out.get_index()] = map(lambda x: x.get_name(), ins)
-            d_metadata["ijob_to_nevents"][out.get_index()] = [out.get_nevents(), out.get_nevents_positive()]
+            d_metadata["ijob_to_nevents"][out.get_index()] = [out.get_nevents(), out.get_nevents_positive() if self.output_is_tree else 0]
             done_nevents += out.get_nevents()
         d_metadata["basedir"] = os.path.abspath(self.get_basedir())
         d_metadata["tag"] = self.tag
