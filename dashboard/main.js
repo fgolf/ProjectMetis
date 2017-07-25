@@ -134,7 +134,6 @@ function loadJSON() {
             setUpDOM(data);
         }
         fillDOM(data); 
-        afterFillDOM();
     });
 }
 
@@ -147,6 +146,8 @@ function afterFillDOM() {
     //     });
     // });
 
+    console.log($('.forqtooltip'));
+    console.log($('.forqtooltip_dis'));
     $('.forqtooltip_dis').each(function() {
         $(this).qtip({
 
@@ -268,7 +269,8 @@ function getProgress(general) {
     var done = general["njobs_done"];
     var tot = general["njobs_total"];
 
-    var pct = 100.0*done/tot;
+    var pct = 0;
+    if (tot > 0) pct = 100.0*done/tot;
     return {
         pct: pct,
         done: done,
@@ -365,6 +367,8 @@ function setUpDOM(data) {
             toappend += "<span style='color: purple'>[&#128700; "+general["baby"]["analysis"]+" "+general["baby"]["baby_tag"]+"]</span> ";
         } else if (general["type"] == "CMS4") {
             toappend += "<span style='color: purple'>[CMS4]</span> ";
+        } else {
+            toappend += "<span style='color: blue'>["+general["type"]+"]</span> ";
         }
         toappend += general["dataset"]+"</a>";
         toappend += "<div class='pbar' id='pbar_"+id+"'>";
@@ -456,6 +460,12 @@ function fillDOM(data) {
         // var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
         var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
         jsStr = jsStr.replace("\"dataset\":", " <a href='"+link+"' class='forqtooltip_dis' style='text-decoration: underline'>dataset</a>: ");
+
+        var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=config&short=short&query="+general["dataset"];
+        jsStr = jsStr.replace("\"global_tag\":", " <a href='"+link+"' class='forqtooltip_dis' style='text-decoration: underline'>global_tag</a>: ");
+
+        var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=snt&short=short&query="+general["dataset"];
+        jsStr = jsStr.replace("\"output_dir\":", " <a href='"+link+"' class='forqtooltip_dis' style='text-decoration: underline'>output_dir</a>: ");
         
         $("#details_"+id).html(beforedetails+"<pre>" + jsStr + "</pre>"+afterdetails);
 
@@ -469,6 +479,7 @@ function fillDOM(data) {
 
 
 
+    afterFillDOM();
 }
 
 function sortSamples(alphabetical=false) {
@@ -546,6 +557,8 @@ function updateSummary(data) {
     var nevents_done = data["tasks"].sum2("general","nevents_done");
     var njobs_done = data["tasks"].sum2("general","njobs_done");
     var njobs_total = data["tasks"].sum2("general","njobs_total");
+    var pct_events = Math.round(100.0*100.0*nevents_done/nevents_total)/100;
+    var pct_jobs = Math.round(100.0*100.0*njobs_done/njobs_total)/100;
 
     var buff = "";
     buff += "<table>";
@@ -557,10 +570,11 @@ function updateSummary(data) {
     buff += "<tr><th align='left'>Njobs (done)</th> <td align='right'>{0}</td></tr>".format(njobs_done);
     buff += "<tr><th align='left'>Njobs (running)</th> <td align='right'>{0}</td></tr>".format(njobs_total-njobs_done);
     buff += "<tr><th></th><td></td></tr>";
-    buff += "<tr><th align='left'>Event completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*100.0*nevents_done/nevents_total)/100);
-    buff += "<tr><th align='left'>Job completion</th> <td align='right'>{0}%</td></tr>".format(Math.round(100.0*100.0*njobs_done/njobs_total)/100);
+    buff += "<tr><th align='left'>Event completion</th> <td align='right'>{0}%</td></tr>".format(pct_events);
+    buff += "<tr><th align='left'>Job completion</th> <td align='right'>{0}%</td></tr>".format(pct_jobs);
     buff += "</table>";
     $("#summary").html(buff);
+    document.title = "Metis Dashboard [{0}%]".format(Math.round(pct_jobs));
 
 
 }
