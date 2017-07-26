@@ -1,6 +1,7 @@
 import unittest
 import os
 import time
+import logging
 
 import Utils
 from Sample import DirectorySample
@@ -26,6 +27,7 @@ class CondorTaskTest(unittest.TestCase):
         # make dummy CondorTask with the files we
         # touched in the basedir, and chunk
         # the outputs
+        logging.getLogger("metis_logger").disabled = True
         cls.dummy = CondorTask(
                 sample = DirectorySample(
                     location = basedir,
