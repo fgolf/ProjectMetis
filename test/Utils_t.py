@@ -64,7 +64,7 @@ class UtilsTest(unittest.TestCase):
         Utils.do_cmd("chmod a+x {0}/temp_test_local.sh".format(basedir))
         success, cluster_id =  Utils.condor_submit(executable=basedir+"temp_test_local.sh", arguments=[], inputfiles=[], logdir=basedir, universe="local")
         found_it = False
-        for t in [1.0, 1.0, 2.0, 3.0, 5.0, 10.0]:
+        for t in [1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 5.0, 10.0]:
             time.sleep(t)
             if os.path.exists(test_file):
                 found_it = True
