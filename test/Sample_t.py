@@ -1,7 +1,9 @@
 import unittest
+import os
 
-from Sample import Sample, DBSSample, DirectorySample
+from Sample import Sample, DBSSample, DirectorySample, SNTSample
 from Constants import Constants
+import Utils
 
 class SampleTest(unittest.TestCase):
 
@@ -26,6 +28,30 @@ class DirectorySampleTest(unittest.TestCase):
         dsname = "/blah/blah/BLAH/"
         dirsamp = DirectorySample(dataset=dsname, location="/dummy/dir/")
         self.assertEqual(len(dirsamp.get_files()), 0)
+
+class SNTSampleTest(unittest.TestCase):
+
+    def test_everything(self):
+        nfiles = 5
+        dsname = "/DummyDataset/Dummy/TEST"
+        basedir = "/tmp/{0}/metis/sntsample_test/".format(os.getenv("USER"))
+
+        # make a directory, touch <nfiles> files
+        Utils.do_cmd("mkdir -p {0} ; rm {0}/*.root".format(basedir))
+        for i in range(1,nfiles+1):
+            Utils.do_cmd("touch {0}/output_{1}.root".format(basedir,i))
+
+        # push a dummy dataset to DIS using the dummy location
+        # and make sure we updated the sample without problems
+        dummy = SNTSample(dataset=dsname)
+        dummy.info["location"] = basedir
+        updated = dummy.do_update_dis()
+        self.assertEqual(updated, True)
+
+        # make a new sample, retrieve from DIS, and check
+        # that the location was written properly
+        check = SNTSample(dataset=dsname)
+        self.assertEqual(len(check.get_files()), nfiles)
 
 
 if __name__ == "__main__":
