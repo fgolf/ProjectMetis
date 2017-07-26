@@ -82,7 +82,7 @@ class Sample(object):
         response = {}
         try:
             dis_status = False
-            response = dis.query(query_str, typ='snt')
+            response = dis.query(query_str, typ='snt',detail=True)
             response = response["response"]["payload"]            
             if len(response) == 0:
                 self.logger.error(" Query found no matching samples for: status = %s, dataset = %s, type = %s analysis = %s" % (self.info["status"], self.info["dataset"], self.info["type"], self.info["analysis"]))
@@ -90,24 +90,24 @@ class Sample(object):
 
             if len(response) > 1:
                 response = self.sort_query_by_timestamp(response)
-                
+
             self.info["gtag"]      = response[0]["gtag"]
             self.info["kfact"]     = response[0]["kfactor"]
             self.info["xsec"]      = response[0]["xsec"]
-            self.info["filtname"]  = response[0]["filter_name"]
+            self.info["filtname"]  = response[0].get("filter_name","NoFilter")
             self.info["efact"]     = response[0]["filter_eff"]
-            self.info["analysis"]  = response[0]["analysis"]
+            self.info["analysis"]  = response[0].get("analysis","")
             self.info["tag"]       = response[0].get("tag", response[0].get("cms3tag"))
             self.info["version"]   = response[0].get("version", "v1.0")
             self.info["nevts_in"]  = response[0]["nevents_in"]
             self.info["nevts"]     = response[0]["nevents_out"]
             self.info["location"]  = response[0]["location"]
-            self.info["creator"]   = response[0]["assigned_to"]
+            self.info["creator"]   = response[0].get("assigned_to","")
             self.info["status"]    = response[0].get("status", Constants.VALID_STR)
-            self.info["twiki"]     = response[0]["twiki_name"]
+            self.info["twiki"]     = response[0].get("twiki_name","")
             self.info["siblings"]  = response[0].get("siblings", [])
             self.info["files"]     = response[0].get("files", [])
-            self.info["comments"]  = response[0]["comments"]
+            self.info["comments"]  = response[0].get("comments","")
             return True
         except:
             return False
@@ -209,7 +209,6 @@ class DBSSample(Sample):
         self.info["native_cmssw"] = response["native_cmssw"]
         return self.info["native_cmssw"]
 
-            
 class DirectorySample(Sample):
     """
     Sample which just does a directory listing to get files
@@ -246,6 +245,53 @@ class DirectorySample(Sample):
     def get_globaltag(self):
         return self.info.get("gtag","dummy_gtag")
 
+class SNTSample(Sample):
+    """
+    Sample object which queries DIS for SNT samples
+    """
+
+    def __init__(self, **kwargs):
+        # Handle whatever kwargs we want here
+        needed_params = ["dataset"]
+        if any(x not in kwargs for x in needed_params):
+            raise Exception("Need parameters: {0}".format(",".join(needed_params)))
+
+        self.globber = kwargs.get("globber","*.root")
+        self.use_xrootd = kwargs.get("use_xrootd",False)
+        self.typ = kwargs.get("typ","CMS3")
+
+        # Pass all of the kwargs to the parent class
+        super(self.__class__, self).__init__(**kwargs)
+
+        self.info["type"] = self.typ
+
+
+    def get_nevents(self):
+        if self.info.get("nevts",None): return self.info["nevts"]
+        self.load_from_dis()
+        return self.info["nevts"]
+
+    def get_location(self):
+        if self.info.get("location",None): return self.info["location"]
+        self.load_from_dis()
+        return self.info["location"]
+
+    def get_files(self):
+        if self.info.get("files",None): return self.info["files"]
+        filepaths = glob.glob(self.get_location() + "/" + self.globber)
+        if self.use_xrootd:
+            filepaths = [fp.replace("/hadoop/cms","") for fp in filepaths]
+        self.info["files"] = map(EventsFile,filepaths)
+
+        return self.info["files"]
+
+    def get_globaltag(self):
+        if self.info.get("gtag",None): return self.info["gtag"]
+        response = self.do_dis_query(typ="config")
+        self.info["gtag"] = response["global_tag"]
+        self.info["native_cmssw"] = response["release_version"]
+        return self.info["gtag"]
+
 
 if __name__ == '__main__':
     s = Sample()
@@ -253,7 +299,6 @@ if __name__ == '__main__':
     # ds = DirectorySample(
     #         dataset="/blah/blah/MINE",
     #         location="/hadoop/cms/store/user/namin/ProjectMetis/JetHT_Run2017A-PromptReco-v3_MINIAOD_CMS4_V00-00-03",
-    #         tag="mytagv1",
     #         )
     # print ds.get_files()
     # print ds.get_globaltag()
