@@ -66,7 +66,8 @@ def setup_logger(logger_name="metis_logger"):
     fh = logging.FileHandler(logger_name + ".log")
     fh.setLevel(logging.DEBUG) # DEBUG level to logfile
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG) # DEBUG level to console (for actual usage, probably want INFO)
+    # ch.setLevel(logging.DEBUG) # DEBUG level to console (for actual usage, probably want INFO)
+    ch.setLevel(logging.INFO) # DEBUG level to console (for actual usage, probably want INFO)
     formatter = logging.Formatter('[%(asctime)s] [%(filename)s:%(lineno)s] [%(levelname)s] %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
@@ -241,7 +242,7 @@ def update_dashboard(webdir=None, jsonfile=None):
 if __name__ == "__main__":
     pass
 
-    make_tarball("cscval_v0.tar.gz")
+    make_tarball("cscval_v2.tar.gz")
 
     # from collections import Counter
     # jobs = condor_q(user="")

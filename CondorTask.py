@@ -121,7 +121,7 @@ class CondorTask(Task):
         else:
             chunks, leftoverchunk = Utils.file_chunker(files, events_per_output=self.events_per_output, files_per_output=self.files_per_output, flush=flush)
         if len(override_chunks) > 0:
-            self.logger.debug("Manual override to have {0} chunks".format(len(override_chunks)))
+            self.logger.info("Manual override to have {0} chunks".format(len(override_chunks)))
             chunks = override_chunks
             leftoverchunk = []
         for chunk in chunks:
@@ -133,7 +133,7 @@ class CondorTask(Task):
             self.io_mapping.append([chunk, output_file])
             nextidx += 1
         if (nextidx-original_nextidx > 0):
-            self.logger.debug("Updated mapping to have {0} more entries".format(nextidx-original_nextidx))
+            self.logger.info("Updated mapping to have {0} more entries".format(nextidx-original_nextidx))
 
 
     def get_sample(self):
@@ -148,6 +148,11 @@ class CondorTask(Task):
         """
         return self.io_mapping
 
+    def reset_io_mapping(self):
+        """
+        Return input-output mapping
+        """
+        self.io_mapping = []
 
     def get_inputs(self, flatten=False):
         """
@@ -209,7 +214,7 @@ class CondorTask(Task):
                 if succeeded:
                     if index not in self.job_submission_history: self.job_submission_history[index] = []
                     self.job_submission_history[index].append(cluster_id)
-                    self.logger.debug("Job for ({0}) submitted to {1}".format(out, cluster_id))
+                    self.logger.info("Job for ({0}) submitted to {1}".format(out, cluster_id))
 
             else:
                 this_job_dict = next(rj for rj in condor_job_dicts if int(rj["jobnum"]) == index)
@@ -234,7 +239,7 @@ class CondorTask(Task):
                     self.logger.debug("Job {0} for ({1}) held for {2:.1f} hrs with hold reason: {3}".format(cluster_id, out, hours_since, this_job_dict["HoldReason"]))
 
                     if hours_since > 5.0:
-                        self.logger.debug("Job {0} for ({1}) removed for excessive hold time".format(cluster_id, out))
+                        self.logger.info("Job {0} for ({1}) removed for excessive hold time".format(cluster_id, out))
                         Utils.condor_rm([cluster_id])
 
     def process(self):
@@ -246,9 +251,9 @@ class CondorTask(Task):
         # set up condor input if it's the first time submitting
         if not self.prepared_inputs: self.prepare_inputs()
 
-        self.logger.debug("Started processing {0}".format(self.sample.get_datasetname()))
+        self.logger.info("Started processing {0}".format(self.sample.get_datasetname()))
         self.run()
-        self.logger.debug("Ended processing {0}".format(self.sample.get_datasetname()))
+        self.logger.info("Ended processing {0}".format(self.sample.get_datasetname()))
 
         if self.complete():
             self.finalize()
