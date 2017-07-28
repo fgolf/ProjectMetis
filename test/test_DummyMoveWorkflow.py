@@ -53,17 +53,11 @@ class DummyMoveWorkflowTest(unittest.TestCase):
         p1 = pa+pb
 
         while not p1.complete():
-            p1.run()
+            p1.process()
 
-            time.sleep(1.0)
-            # print "Sleeping for 1s before next path iteration"
+            time.sleep(0.1)
 
         self.assertEqual(p1.complete(), True)
-
-        # print "Path completed!"
-
-
-
 
 
 if __name__ == "__main__":
