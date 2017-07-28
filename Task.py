@@ -19,7 +19,8 @@ class Task(object):
 
         self.hash = self.get_task_hash()
         self.logger = logging.getLogger(setup_logger())
-        self.basedir = os.environ.get("METIS_BASE",".")+"/"
+        # self.basedir = os.environ.get("METIS_BASE",".")+"/"
+        self.basedir = "./"
         if not hasattr(self, "unique_name"):
             self.unique_name = self.hash
         # if not hasattr(self, "to_backup"):
@@ -49,7 +50,7 @@ class Task(object):
         task_dir = "{0}/tasks/{1}/".format(self.get_basedir(),self.unique_name)
         if not os.path.exists(task_dir):
             do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
-        return task_dir
+        return os.path.normpath(task_dir)
 
     def get_task_hash(self):
         """
@@ -129,7 +130,7 @@ class Task(object):
         """
         pass
 
-    def complete(self):
+    def complete(self, return_fraction=False):
         """
         OVERLOAD
         If the task has any outputs, return ``True`` if all outputs exist.
@@ -141,7 +142,10 @@ class Task(object):
         if len(bools) == 0: frac = 1.0
         else: frac = 1.0*sum(bools)/len(bools)
 
-        return frac
+        if return_fraction:
+            return frac
+        else:
+            return all(bools)
 
     def get_completed_outputs(self):
         """
