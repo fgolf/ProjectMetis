@@ -38,10 +38,10 @@ class DummyMoveTask(Task):
             if self.create_inputs and not inp.exists():
                 self.logger.debug("Specified create_inputs=True, so creating input file {}".format(inp.get_name()))
                 do_cmd("touch {}".format(inp.get_name()))
-                inp.update()
+                inp.recheck()
 
             do_cmd("mv {} {}".format(inp.get_name(), out.get_name()))
-            out.update()
+            out.recheck()
             self.logger.debug("Running on {0} -> {1}".format(inp.get_name(), out.get_name()))
 
 if __name__ == "__main__":
