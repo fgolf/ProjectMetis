@@ -22,8 +22,6 @@ class UserTarball(object):
     def __init__(self, name=None, mode='w:gz', logger=None):
         # self.logger = logger
         self.CMSSW_BASE = os.getenv("CMSSW_BASE")
-        if "CMSSW" not in self.CMSSW_BASE:
-            raise Exception("You need a CMSSW environment to get $CMSSW_BASE")
         # self.logger.debug("Making tarball in %s" % name)
         self.tarfile = tarfile.open(name=name , mode=mode, dereference=True)
 
@@ -31,12 +29,17 @@ class UserTarball(object):
         """
         Add the necessary files to the tarball
         """
+
+        if "CMSSW" not in self.CMSSW_BASE:
+            raise Exception("You need a CMSSW environment to get $CMSSW_BASE")
+
         directories = ['lib', 'biglib', 'module', 'python', 'cfipython']
 
         # Note that dataDirs are only looked-for and added under the src/ folder.
         # /data/ subdirs contain data files needed by the code
         # /interface/ subdirs contain C++ header files needed e.g. by ROOT6
         dataDirs    = ['data','interface']
+
 
         # Tar up whole directories
         for directory in directories:
