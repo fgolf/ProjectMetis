@@ -14,6 +14,7 @@ class SampleTest(unittest.TestCase):
 
 class DBSSampleTest(unittest.TestCase):
 
+    @unittest.skipIf("uaf-" not in os.uname()[1], "Need internet access")
     def test_queries(self):
         dsname = "/ZeroBias6/Run2017A-PromptReco-v2/MINIAOD"
         dbssamp = DBSSample(dataset=dsname)
@@ -31,6 +32,7 @@ class DirectorySampleTest(unittest.TestCase):
 
 class SNTSampleTest(unittest.TestCase):
 
+    @unittest.skipIf("uaf-" not in os.uname()[1], "Need internet access")
     def test_everything(self):
         nfiles = 5
         dsname = "/DummyDataset/Dummy/TEST"
