@@ -33,6 +33,9 @@ class File(object):
             info = "name={},status={}".format(self.name,stat)
             return "{}({})".format(self.__class__.__name__,info)
 
+    def __eq__(self, other):
+        return self.name == other.get_name()
+
     def set_name(self, name):
         self.name = name
 
@@ -157,7 +160,7 @@ class EventsFile(File):
         return "<File {0}: {1} events>".format(self.name,self.nevents)
         # return "<File (.../){0}: {1} events>".format(self.get_basename(),self.nevents)
 
-class FileDBS(File):
+class DBSFile(File):
 
     def __init__(self, name, **kwargs):
         self.nevents = kwargs.get("nevents", 0.)
