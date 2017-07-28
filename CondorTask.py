@@ -90,6 +90,21 @@ class CondorTask(Task):
     def get_job_submission_history(self):
         return self.job_submission_history
 
+    def get_inputs_for_output(self, output):
+        """
+        Takes either a File object or a filename
+        and returns the list of inputs in io_mapping 
+        corresponding to that output
+        """
+        for inps,out in self.io_mapping:
+            if type(output) == str:
+                if os.path.normpath(output) == os.path.normpath(out.get_name()):
+                    return inps
+            else:
+                if out == output: 
+                    return inps
+        return output
+
     def update_mapping(self, flush=False, override_chunks=[]):
         """
         Given the sample, make the input-output mapping by chunking
