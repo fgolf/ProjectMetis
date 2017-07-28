@@ -9,7 +9,7 @@ As an overview, ProjectMetis seeks to host the following functionality:
 * Ability to chain tasks into a queue, handling dependencies transparently
 * Failure handling (where appropriate)
 
-Concrete things that ProjectMetis can (or will ;) ) do:
+Concrete things that ProjectMetis can do:
 * Submission of arbitrary CMSSW jobs on a dataset (or list of files) to condor
   * A dataset could be a published DBS dataset, a directory (containing files), or a dataset published on DIS
   * Arbitrary CMSSW jobs include CMS4
@@ -25,6 +25,11 @@ In the process of fulfilling the above, ProjetMetis exposes some nice standalone
 ## Installation and Setup
 0. Checkout this repository
 1. Create CMSSW environment via `. setup.sh`
+
+## TODO
+* Clean up statsparser
+* SNTSample in principle allows anyone to update the sample on DIS. We don't want this for "central" samples, so rework this
+* Add more TODOs
 
 ## Run
 
