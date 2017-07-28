@@ -6,7 +6,7 @@ import scripts.dis_client as dis
 
 from Constants import Constants
 from Utils import setup_logger
-from File import FileDBS, EventsFile
+from File import DBSFile, EventsFile
 
 class Sample(object):
     """
@@ -177,7 +177,7 @@ class DBSSample(Sample):
     def load_from_dis(self):
 
         response = self.do_dis_query(typ="files")
-        fileobjs = [FileDBS(name=fdict["name"],nevents=fdict["nevents"],filesizeGB=fdict["sizeGB"]) for fdict in response]
+        fileobjs = [DBSFile(name=fdict["name"],nevents=fdict["nevents"],filesizeGB=fdict["sizeGB"]) for fdict in response]
         fileobjs = sorted(fileobjs, key=lambda x: x.get_name())
 
         self.info["files"] = fileobjs
