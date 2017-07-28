@@ -6,6 +6,7 @@ import logging
 import Utils
 from Sample import DirectorySample
 from CondorTask import CondorTask
+from File import File
 
 
 class CondorTaskTest(unittest.TestCase):
@@ -13,6 +14,8 @@ class CondorTaskTest(unittest.TestCase):
     dummy = None
     nfiles = 7
     files_per_job = 2
+    cmssw =  "CMSSW_8_0_21"
+    tag =  "vtest"
 
     @classmethod
     def setUpClass(cls):
@@ -36,14 +39,15 @@ class CondorTaskTest(unittest.TestCase):
                     ),
                 open_dataset = False,
                 files_per_output = cls.files_per_job,
-                cmssw_version = "CMSSW_8_0_21",
-                tag = "vtest",
+                cmssw_version = cls.cmssw,
+                tag = cls.tag,
                 )
 
         # prepare inputs and run, 
         # but pretend like outputs exist and don't submit
         cls.dummy.prepare_inputs()
         cls.dummy.run(fake=True)
+
 
         # self.__class__.is_set_up = True
 
@@ -57,7 +61,17 @@ class CondorTaskTest(unittest.TestCase):
         self.assertEqual( self.dummy.complete() , True )
 
     def test_summary(self):
-        self.assertEqual(len(self.dummy.get_task_summary()["jobs"]), ((self.nfiles+1)//self.files_per_job))
+        summary = self.dummy.get_task_summary()
+        self.assertEqual(sum([x["is_on_condor"] for x in summary["jobs"].values()]), 0)
+        self.assertEqual(summary["cmssw_version"], self.cmssw)
+        self.assertEqual(summary["tag"], self.tag)
+        self.assertEqual(len(summary["jobs"].keys()), (self.nfiles+1)//self.files_per_job)
+
+    def test_get_inputs_for_output(self):
+        inps, output = self.dummy.get_io_mapping()[0]
+        self.assertEqual(self.dummy.get_inputs_for_output(output), inps)
+        self.assertEqual(self.dummy.get_inputs_for_output(output.get_name()), inps)
+
 
 if __name__ == "__main__":
     unittest.main()
