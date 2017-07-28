@@ -33,7 +33,6 @@ class UtilsTest(unittest.TestCase):
         self.assertEqual((len(chunks),len(leftoverchunk)) , (1,2))
 
 
-    @unittest.skipIf("uaf-" not in os.uname()[1], "Condor only testable on UAF")
     def test_condor_submit_fake(self):
         self.assertEqual
         success, cluster_id =  Utils.condor_submit(
