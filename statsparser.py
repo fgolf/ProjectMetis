@@ -129,15 +129,17 @@ def write_web_summary(data = {}, summary_fname="summary.json", webdir="~/public_
     # but which are not in the current set of tasks (so that we don't nuke
     # the summaries for multiple instances of metis running on different
     # datasets)
-    with open("web_summary.json", 'r') as fhin:
-        data_in = json.load(fhin)
-        for task in data_in.get("tasks",[]):
-            if task["general"]["dataset"] not in [t["general"]["dataset"] for t in tasks]:
-                d_web_summary["tasks"].append(task)
+    SUMMARY_NAME = "web_summary.json"
+    if os.path.exists(SUMMARY_NAME):
+        with open(SUMMARY_NAME, 'r') as fhin:
+            data_in = json.load(fhin)
+            for task in data_in.get("tasks",[]):
+                if task["general"]["dataset"] not in [t["general"]["dataset"] for t in tasks]:
+                    d_web_summary["tasks"].append(task)
                 
-    with open("web_summary.json", 'w') as fhout:
+    with open(SUMMARY_NAME, 'w') as fhout:
         json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
-    Utils.update_dashboard(webdir=webdir, jsonfile="web_summary.json")
+    Utils.update_dashboard(webdir=webdir, jsonfile=SUMMARY_NAME)
         
 
 if __name__ == "__main__": 
