@@ -160,7 +160,7 @@ class EventsFile(File):
         return "<File {0}: {1} events>".format(self.name,self.nevents)
         # return "<File (.../){0}: {1} events>".format(self.get_basename(),self.nevents)
 
-class DBSFile(File):
+class FileDBS(File):
 
     def __init__(self, name, **kwargs):
         self.nevents = kwargs.get("nevents", 0.)

@@ -1,6 +1,6 @@
 import unittest
 
-from File import File, EventsFile, DBSFile
+from File import File, EventsFile, FileDBS
 from Constants import Constants
 
 class FileTest(unittest.TestCase):
@@ -39,10 +39,10 @@ class EventsFileTest(unittest.TestCase):
         self.assertEqual(ef.get_nevents_positive(), 90)
         self.assertEqual(ef.get_nevents_negative(), 10)
 
-class DBSFileTest(unittest.TestCase):
+class FileDBSTest(unittest.TestCase):
 
     def test_filesizeGB(self):
-        fd = DBSFile("does_not_exist.root", status=Constants.VALID, nevents=100, filesizeGB=10.0)
+        fd = FileDBS("does_not_exist.root", status=Constants.VALID, nevents=100, filesizeGB=10.0)
         self.assertEqual(fd.get_filesizeGB(), 10.0)
 
 
