@@ -5,6 +5,10 @@ from Constants import Constants
 import Utils
 
 def is_data_by_filename(fname):
+    """
+    TODO
+    this is super adhoc. FIXME
+    """
     return "Run2017" in fname
 
 class File(object):
