@@ -2,6 +2,7 @@ import unittest
 import os
 import time
 import logging
+import glob
 
 import Utils
 from Sample import DirectorySample
@@ -21,11 +22,12 @@ class CondorTaskTest(unittest.TestCase):
     def setUpClass(cls):
         super(CondorTaskTest, cls).setUpClass()
 
-        # make a test directory and touch some root files there
+        # make a test directory and touch some root files and executable there
         basedir = "/tmp/{0}/metis/condortask_test/".format(os.getenv("USER"))
         Utils.do_cmd("mkdir -p {0}".format(basedir))
         for i in range(1,cls.nfiles+1):
             Utils.do_cmd("touch {0}/input_{1}.root".format(basedir, i))
+        Utils.do_cmd("echo hello > {0}/executable.sh".format(basedir))
 
         # make dummy CondorTask with the files we
         # touched in the basedir, and chunk
@@ -41,6 +43,7 @@ class CondorTaskTest(unittest.TestCase):
                 files_per_output = cls.files_per_job,
                 cmssw_version = cls.cmssw,
                 tag = cls.tag,
+                executable = "{0}/executable.sh".format(basedir)
                 )
 
         # prepare inputs and run, 
@@ -71,6 +74,10 @@ class CondorTaskTest(unittest.TestCase):
         inps, output = self.dummy.get_io_mapping()[0]
         self.assertEqual(self.dummy.get_inputs_for_output(output), inps)
         self.assertEqual(self.dummy.get_inputs_for_output(output.get_name()), inps)
+
+    def test_prepare_inputs(self):
+        shfiles = glob.glob(self.dummy.get_taskdir()+"/*.sh")
+        self.assertEqual(len(shfiles), 1)
 
 
 if __name__ == "__main__":
