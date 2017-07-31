@@ -49,6 +49,10 @@ class CondorTaskTest(unittest.TestCase):
         # prepare inputs and run, 
         # but pretend like outputs exist and don't submit
         cls.dummy.prepare_inputs()
+        # run once to "submit to condor" and "create outputs" (set_fake)
+        cls.dummy.run(fake=True)
+        # run again to recognize that all outputs are there and
+        # we can then declare completion
         cls.dummy.run(fake=True)
 
 
@@ -79,6 +83,11 @@ class CondorTaskTest(unittest.TestCase):
         shfiles = glob.glob(self.dummy.get_taskdir()+"/*.sh")
         self.assertEqual(len(shfiles), 1)
 
+    def test_get_job_submission_history(self):
+        history = self.dummy.get_job_submission_history()
+        ijobs = range(1,(self.nfiles+1)//self.files_per_job+1)
+        self.assertEqual(sorted(history.keys()), ijobs)
+        self.assertEqual(history.values(), [[-1] for _ in ijobs])
 
 if __name__ == "__main__":
     unittest.main()

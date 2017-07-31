@@ -63,9 +63,10 @@ class CondorTask(Task):
         # Make a unique name from this task for pickling purposes
         self.unique_name = kwargs.get("unique_name", "{0}_{1}_{2}".format(self.get_task_name(),self.sample.get_datasetname().replace("/","_")[1:],self.tag))
 
-
         # Pass all of the kwargs to the parent class
         super(CondorTask, self).__init__(**kwargs)
+
+        self.logger.info("Instantiated task for {0}".format(self.sample.get_datasetname()))
 
         # Can keep calling update_mapping afterwards to re-query input files
         if not self.read_only:
@@ -218,10 +219,13 @@ class CondorTask(Task):
             out.recheck() 
             index = out.get_index() # "merged_ntuple_42.root" --> 42
             on_condor = index in condor_job_indices
-            done = (out.exists() and not on_condor) or fake
+            done = (out.exists() and not on_condor)
             if done:
                 self.handle_done_output(out)
                 continue
+
+            if fake:
+                out.set_fake()
 
             if not on_condor:
                 # Submit and keep a log of condor_ids for each output file that we've submitted
@@ -266,7 +270,6 @@ class CondorTask(Task):
         # set up condor input if it's the first time submitting
         if not self.prepared_inputs: self.prepare_inputs()
 
-        self.logger.info("Started processing {0}".format(self.sample.get_datasetname()))
         self.run()
         self.logger.info("Ended processing {0}".format(self.sample.get_datasetname()))
 
