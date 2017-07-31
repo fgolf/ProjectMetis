@@ -35,6 +35,7 @@ class SNTSampleTest(unittest.TestCase):
     # @unittest.skipIf("uaf-" not in os.uname()[1], "Need internet access")
     def test_everything(self):
         nfiles = 5
+        tag = "v1"
         dsname = "/DummyDataset/Dummy/TEST"
         basedir = "/tmp/{0}/metis/sntsample_test/".format(os.getenv("USER"))
 
@@ -45,14 +46,20 @@ class SNTSampleTest(unittest.TestCase):
 
         # push a dummy dataset to DIS using the dummy location
         # and make sure we updated the sample without problems
-        dummy = SNTSample(dataset=dsname)
+        dummy = SNTSample(
+                dataset=dsname,
+                tag=tag,
+                )
         dummy.info["location"] = basedir
         updated = dummy.do_update_dis()
         self.assertEqual(updated, True)
 
         # make a new sample, retrieve from DIS, and check
         # that the location was written properly
-        check = SNTSample(dataset=dsname)
+        check = SNTSample(
+                dataset=dsname,
+                tag=tag,
+                )
         self.assertEqual(len(check.get_files()), nfiles)
 
 
