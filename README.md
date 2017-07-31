@@ -50,7 +50,6 @@ To run all tests, execute:
 To submit CMS4 jobs on a dataset, literally just need the dataset name, a pset, and a tarred up CMSSW environment.
 ```python
 import time
-from pprint import pprint
 from Sample import DBSSample
 from CMSSWTask import CMSSWTask
 
@@ -84,9 +83,8 @@ if __name__ == "__main__":
 
         # Get a nice json summary of files, event counts, 
         # condor job resubmissions, log file locations, etc.
-        # Will be the input to plotting and monitoring 
-        # scripts/technology.
-        pprint(task.get_task_summary())
+        # and push it to a web area (with dashboard goodies)
+        StatsParser(data=total_summary, webdir="~/public_html/dump/metis_test/").do()
 
         # 1 hr power nap so we wake up refreshed
         # and ready to process some more data
