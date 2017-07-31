@@ -151,6 +151,12 @@ class CondorTask(Task):
         if (nextidx-original_nextidx > 0):
             self.logger.info("Updated mapping to have {0} more entries".format(nextidx-original_nextidx))
 
+    def flush(self):
+        """
+        Convenience function
+        """
+        self.update_mapping(flush=True)
+
 
     def get_sample(self):
         return self.sample

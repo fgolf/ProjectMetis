@@ -89,6 +89,30 @@ class CondorTaskTest(unittest.TestCase):
         self.assertEqual(sorted(history.keys()), ijobs)
         self.assertEqual(history.values(), [[-1] for _ in ijobs])
 
+    def test_flush(self):
+        basedir = "/tmp/{0}/metis/condortask_testflush/".format(os.getenv("USER"))
+        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        tag = "vflush"
+        for i in range(1,self.nfiles+1):
+            Utils.do_cmd("touch {0}/input_{1}.root".format(basedir, i))
+
+        dummy = CondorTask(
+                sample = DirectorySample(
+                    location = basedir,
+                    globber = "*.root",
+                    dataset = "/test/test/TEST",
+                    ),
+                open_dataset = True,
+                files_per_output = self.files_per_job,
+                cmssw_version = self.cmssw,
+                tag = tag,
+                )
+
+        self.assertEqual( len(dummy.get_outputs()) , (self.nfiles//self.files_per_job) )
+        dummy.flush()
+        self.assertEqual( len(dummy.get_outputs()) , (self.nfiles//self.files_per_job+1) )
+
+
 if __name__ == "__main__":
     unittest.main()
 
