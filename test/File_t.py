@@ -6,6 +6,7 @@ from Constants import Constants
 import Utils
 
 class FileTest(unittest.TestCase):
+
     def test_file_exists(self):
         f = File(__file__)
         self.assertEqual(f.exists(), True)
@@ -17,6 +18,18 @@ class FileTest(unittest.TestCase):
     def test_fake(self):
         f = File("does_not_exist.root", fake=True)
         self.assertEqual(f.exists(), True)
+
+    def test_set_fake(self):
+        f = File("does_not_exist.root")
+        self.assertEqual(f.exists(), False)
+        f.set_fake()
+        self.assertEqual(f.exists(), True)
+
+    def test_unset_fake(self):
+        f = File("does_not_exist.root", fake=True)
+        self.assertEqual(f.exists(), True)
+        f.unset_fake()
+        self.assertEqual(f.exists(), False)
 
     def test_name_manipulations(self):
         f = File("/tmp/does_not_exist_1.root", fake=True)
@@ -51,13 +64,25 @@ class FileTest(unittest.TestCase):
         # now it doesn't exist
         self.assertEqual(f.exists(), False)
 
-class EventsFileTest(unittest.TestCase):
+    def test_file_equals(self):
+        f1 = File("does_not_exist0.root")
+        f2 = File("does_not_exist0.root")
+        self.assertEqual(f1, f2.get_name())
+        self.assertEqual(f1, f2)
+
+    def test_file_notequal(self):
+        f1 = File("does_not_exist1.root")
+        f2 = File("does_not_exist2.root")
+        self.assertNotEqual(f1, f2)
 
     def test_status(self):
-        ef = EventsFile("does_not_exist.root", status=Constants.VALID, nevents=100)
-        self.assertEqual(ef.get_status(), Constants.VALID)
-        ef.set_status(Constants.INVALID)
-        self.assertEqual(ef.get_status(), Constants.INVALID)
+        f = File("does_not_exist.root", status=Constants.VALID)
+        self.assertEqual(f.get_status(), Constants.VALID)
+        f.set_status(Constants.INVALID)
+        self.assertEqual(f.get_status(), Constants.INVALID)
+
+class EventsFileTest(unittest.TestCase):
+
 
     def test_nevents(self):
         ef = EventsFile("does_not_exist.root", status=Constants.VALID, nevents=100, nevents_negative=10, fake=True)

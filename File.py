@@ -38,7 +38,10 @@ class File(object):
             return "{}({})".format(self.__class__.__name__,info)
 
     def __eq__(self, other):
-        return self.name == other.get_name()
+        if type(other) is str:
+            return self.name == other
+        else:
+            return self.name == other.get_name()
 
     def set_name(self, name):
         self.name = name
@@ -92,7 +95,16 @@ class File(object):
 
     def set_fake(self):
         self.file_exists = True
+        self.fake = True
         self.status = Constants.FAKE
+
+    def unset_fake(self):
+        self.fake = False
+        self.status = None
+        self.recheck()
+
+    def is_fake(self):
+        return self.fake
 
 
 class EventsFile(File):
