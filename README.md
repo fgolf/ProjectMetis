@@ -30,6 +30,7 @@ In the process of fulfilling the above, ProjetMetis exposes some nice standalone
 * Clean up statsparser
 * SNTSample in principle allows anyone to update the sample on DIS. We don't want this for "central" samples, so rework this
 * Add more TODOs
+* We have all the ingredients to replicate CRAB submission/status functionality, so do it
 
 ## Run
 
