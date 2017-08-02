@@ -6,7 +6,8 @@
     source /cvmfs/cms.cern.ch/crab3/crab.sh
 }
 
-export METIS_BASE=`pwd`
+# export METIS_BASE=`pwd`
+# cd $METIS_BASE
 
 # CRAB screws up our PYTHONPATH. Go figure.
 export PYTHONPATH=$(pwd):$PYTHONPATH
