@@ -78,6 +78,7 @@ class StatsParser(object):
         summaries = self.data.copy()
 
         tasks = []
+        timestamp = int(time.time()/300)*300
         for dsname in summaries.keys():
 
             tasksummary = summaries[dsname]
@@ -163,7 +164,7 @@ class StatsParser(object):
                     "missing_events": max(queriednevents-outnevents,0),
             }
             d_task["history"] = {
-                    "timestamps": [int(time.time()/300)*300], # round to latest 5 minute mark
+                    "timestamps": [timestamp], # round to latest 5 minute mark
                     "nevents_total": [d_task["general"]["nevents_total"]],
                     "nevents_done": [d_task["general"]["nevents_done"]],
                     "njobs_total": [d_task["general"]["njobs_total"]],
