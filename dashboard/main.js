@@ -308,7 +308,7 @@ function doSendAction(type, dsescaped) {
     var dataset = dsescaped.replace(/\_/g,"/");
     console.log("action,dataset: " + type + " " + dataset);
 
-    if (!confirm('Are you sure you want to do the action: ' + type)) return;
+    // if (!confirm('Are you sure you want to do the action: ' + type)) return;
 
     var obj = {};
     obj["action"] = "action";
@@ -321,10 +321,12 @@ function doSendAction(type, dsescaped) {
             type: "POST",
             data: obj,
             success: function(data) {
+                    console.log("success");
                     displayMessage("<span style='color:green'>"+data+"</span>")
                     console.log(data);
                 },
             error: function(data) {
+                    console.log("error");
                     displayMessage("<span style='color:red'>Error:</span> "+data["responseText"])
                     console.log(data);
                 },
@@ -454,7 +456,9 @@ function fillDOM(data) {
             beforedetails += "\n";
         }
 
-        var jsStr = syntaxHighlight(JSON.stringify(sample, undefined, 4));
+        var sample_toshow = sample;
+        delete sample_toshow["history"];
+        var jsStr = syntaxHighlight(JSON.stringify(sample_toshow, undefined, 4));
 
         // turn dataset into a DIS link
         // var link = "http://uaf-7.t2.ucsd.edu/~namin/makers/disMaker/?type=basic&short=short&query="+general["dataset"];
@@ -473,6 +477,7 @@ function fillDOM(data) {
 
 
     updateSummary(data);
+    doHistory(data);
     // drawChart();
     //
 
@@ -576,6 +581,10 @@ function updateSummary(data) {
     $("#summary").html(buff);
     document.title = "Metis Dashboard [{0}%]".format(Math.round(pct_jobs));
 
+
+}
+
+function doHistory(data) {
 
 }
 
