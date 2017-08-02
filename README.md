@@ -24,13 +24,12 @@ In the process of fulfilling the above, ProjetMetis exposes some nice standalone
 
 ## Installation and Setup
 0. Checkout this repository
-1. Create CMSSW environment via `. setup.sh`
+1. Set up environment via `source setup.sh`. Note that this doesn't overwrite an existing CMSSW environment if you already have one
 
 ## TODO
-* Clean up statsparser
 * SNTSample in principle allows anyone to update the sample on DIS. We don't want this for "central" samples, so rework this
-* Add more TODOs
 * We have all the ingredients to replicate CRAB submission/status functionality, so do it
+* Add more TODOs
 
 ## Run
 
