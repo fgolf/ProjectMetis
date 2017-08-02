@@ -49,6 +49,7 @@ To run all tests, execute:
 
 ## Example
 To submit CMS4 jobs on a dataset, literally just need the dataset name, a pset, and a tarred up CMSSW environment.
+Here's a quick preview, but there are more use case examples in `examples/`.
 ```python
 import time
 from Sample import DBSSample
