@@ -50,7 +50,7 @@ scram b
 
 
 # logging every 45 seconds gives ~100kb log file/3 hours
-dstat -cdngytlmrs --float --nocolor -T --output dsout.csv 45 >& /dev/null &
+dstat -cdngytlmrs --float --nocolor -T --output dsout.csv 60 >& /dev/null &
 
 echo "process.maxEvents.input = cms.untracked.int32(${NEVTS})" >> pset.py
 echo "set_output_name(\"${OUTPUTNAME}.root\")" >> pset.py
