@@ -1,9 +1,9 @@
 import unittest
 import os
 
-from File import File
-from Task import Task
-from Constants import Constants
+from metis.File import File
+from metis.Task import Task
+from metis.Constants import Constants
 
 class TaskTest(unittest.TestCase):
 

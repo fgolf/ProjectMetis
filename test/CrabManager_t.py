@@ -1,8 +1,8 @@
 import unittest
 import os
 
-from Constants import Constants
-from Utils import do_cmd
+from metis.Constants import Constants
+from metis.Utils import do_cmd
 
 class CrabManagerTest(unittest.TestCase):
 
