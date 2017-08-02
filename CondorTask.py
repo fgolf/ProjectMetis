@@ -27,6 +27,7 @@ class CondorTask(Task):
         self.events_per_output = kwargs.get("events_per_output", -1)
         self.files_per_output = kwargs.get("files_per_output", -1)
         self.output_name = kwargs.get("output_name","output.root")
+        self.arguments = kwargs.get("arguments","output.root")
         # self.output_dir = kwargs.get("output_dir",None)
         self.scram_arch = kwargs.get("scram_arch","slc6_amd64_gcc530")
         self.tag = kwargs.get("tag","v0")
@@ -314,7 +315,7 @@ class CondorTask(Task):
         scramarch = self.scram_arch
         executable = self.executable_path
         arguments = [ outdir, outname_noext, inputs_commasep,
-                index, cmssw_ver, scramarch ]
+                index, cmssw_ver, scramarch, self.arguments ]
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
         package_full = os.path.abspath(self.package_path)
         input_files = [package_full] if self.tarfile else []
