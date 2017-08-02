@@ -21,8 +21,6 @@
             <source src="images/ducktales.mp3" type="audio/mpeg">
         </audio>
 
-        <a href="https://github.com/fgolf/ProjectMetis/"><img style="position: absolute; top: 0; right: 0; border: 0; height: 75px;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
-
         <div id="topBar">
             <!-- <img class="mainlogo" src="images/crab.png" /> -->
             <!-- <img class="mainlogo" src="images/metislogo.png" /> -->
@@ -34,9 +32,9 @@
                 &emsp;
                 <a href="#/" onClick="$('#summary').slideToggle(50)">summary</a>&ensp;|&ensp;
                 <a href="#/" id="toggle_sort" onClick="toggleSort()">sort %</a>&ensp;|&ensp;
-                <a href="#/" id="toggle_all" onClick="expandAll()">expand all</a>
                 <!-- <a href="#/" onClick="$('#twiki').slideToggle(50)">twiki</a>&ensp;|&ensp; -->
-                <!-- <a href="#/" onClick="$('#chart_div').slideToggle(50);">chart</a>&ensp;|&ensp; -->
+                <a href="#/" onClick="doHistory(); $('#chart_div').slideToggle(50);">chart</a>&ensp;|&ensp;
+                <a href="#/" id="toggle_all" onClick="expandAll()">expand all</a>
                 <!-- <a href="#/" onClick="$('#log_div').slideToggle(50);">log</a> -->
                 <span id="admin" style="color:#FF3333; display:none;">&emsp;&emsp;<b>admin mode</b></span>
             </span>
@@ -46,9 +44,8 @@
         <div id="container">
 
             <span id="last_updated" class="lastUpdated"></span>
-            <div id="summary" class="section" style='display:none;'> 
-            </div>
-            <!-- <div id="chart_div" style='display:none;'></div> -->
+            <div id="summary" class="section" style='display:none;'> </div>
+            <div id="chart_div" style='display:none;'></div>
             <!-- <div id="log_div" class="section" style='display:none;'> </div> -->
             <div id="section_1" class="section"></div>
             <div id="message_wrapper"><div id="message"></div></div>

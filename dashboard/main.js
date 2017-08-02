@@ -7,8 +7,9 @@ var sortedAZ = false;
 var duckMode = false;
 var adminMode = false;
 
-// google.charts.load('current', {'packages':['corechart']});
-// google.charts.setOnLoadCallback(function() {console.log("google loaded!");});
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(function() {console.log("google loaded!");});
+
 // google.charts.setOnLoadCallback(drawChart);
 
 // google.charts.setOnLoadCallback(function() {
@@ -456,7 +457,7 @@ function fillDOM(data) {
             beforedetails += "\n";
         }
 
-        var sample_toshow = sample;
+        var sample_toshow = $.extend(true, {}, sample);
         delete sample_toshow["history"];
         var jsStr = syntaxHighlight(JSON.stringify(sample_toshow, undefined, 4));
 
@@ -477,7 +478,7 @@ function fillDOM(data) {
 
 
     updateSummary(data);
-    doHistory(data);
+    // doHistory(data);
     // drawChart();
     //
 
@@ -584,8 +585,64 @@ function updateSummary(data) {
 
 }
 
-function doHistory(data) {
+function doHistory() {
+    var tot_history = {};
+    console.log(alldata);
+    for(var i = 0; i < alldata["tasks"].length; i++) {
+        var history = alldata["tasks"][i]["history"] || {};
+        if (!("timestamps" in history)) continue;
+        for(var j = 0; j < history["timestamps"].length; j++) {
+            var ts = history["timestamps"][j];
+            for (k in history) {
+                if (k == "timestamps") continue;
+                var val = history[k][j];
+                if (!(ts in tot_history)) tot_history[ts] = {};
+                if (!(k in tot_history[ts])) tot_history[ts][k] = 0;
+                tot_history[ts][k] += val;
+            }
+        }
+    }
+    console.log(tot_history);
+    drawChart(tot_history);
+}
 
+function drawChart(history) {
+
+
+    var data_table = [ [
+        'timestamp',
+        'jobs completed ',
+        'jobs total',
+        // 'events completed ',
+        // 'events total',
+    ] ];
+        
+    // for (var itd = 0; itd < history["time_stats"].length; itd++) {
+    for (ts in history) {
+        var td = history[ts];
+
+        data_table.push( [
+            new Date(ts*1000), // to ms
+            td["njobs_done"] ,
+            td["njobs_total"],
+            // td["nevents_done"] ,
+            // td["nevents_total"],
+        ] );
+    }
+
+    console.log(data_table);
+    var data = google.visualization.arrayToDataTable(data_table);
+    var options_stacked = {
+        isStacked: false,
+        height: 350,
+        width: 850,
+        legend: {position: 'right'},
+        vAxis: {minValue: 0},
+        // vAxis: {logScale: true},
+    };
+    var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
+    // console.log(chart);
+    chart.draw(data, options_stacked);
 }
 
 function expandAll() {
