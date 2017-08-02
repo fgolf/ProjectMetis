@@ -4,6 +4,7 @@ import time
 
 import metis.Utils as Utils
 from metis.File import EventsFile
+import os
 
 class UtilsTest(unittest.TestCase):
 
@@ -113,6 +114,10 @@ ls -l
 
         self.assertEqual(success, True)
         self.assertEqual(found_job, True)
+
+
+    def test_metis_base(self):
+        self.assertEqual(Utils.metis_base(),os.environ.get("METIS_BASE",".")+"/")
 
 if __name__ == "__main__":
     unittest.main()

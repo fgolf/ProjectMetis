@@ -46,6 +46,9 @@ def sum_dicts(dicts):
             ret[k] += v
     return dict(ret)
 
+def metis_base():
+    return os.environ.get("METIS_BASE",".")+"/"
+
 def setup_logger(logger_name="logger_metis"):
     """
     logger_name = u.setup_logger()
@@ -232,8 +235,9 @@ def update_dashboard(webdir=None, jsonfile=None):
     if not webdir:
         raise Exception("Um, we need a web directory, dude.")
     if not os.path.exists(os.path.expanduser(webdir)):
+        mb = metis_base()
         do_cmd("mkdir -p {}/plots/".format(webdir), dryRun=False)
-        do_cmd("cp -rp dashboard/* {}/".format(webdir), dryRun=False)
+        do_cmd("cp -rp {}/dashboard/* {}/".format(mb,webdir), dryRun=False)
     if jsonfile and os.path.exists(jsonfile):
         do_cmd("cp {} {}/".format(jsonfile, webdir), dryRun=False)
         do_cmd("cp plots/* {}/plots/".format(webdir), dryRun=False)

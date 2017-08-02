@@ -4,7 +4,7 @@ import logging
 import pickle
 
 from Constants import Constants
-from Utils import setup_logger, do_cmd
+from Utils import setup_logger, do_cmd, metis_base
 
 class Task(object):
 
@@ -52,7 +52,7 @@ class Task(object):
         return os.path.normpath(task_dir)
 
     def get_metis_base(self):
-        return os.environ.get("METIS_BASE",".")+"/"
+        return metis_base()
 
     def get_task_hash(self):
         """
