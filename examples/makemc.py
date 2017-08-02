@@ -1,8 +1,7 @@
-import Utils
-from CMSSWTask import CMSSWTask
-from Sample import DirectorySample
-from Path import Path
-from statsparser import write_web_summary
+from metis.CMSSWTask import CMSSWTask
+from metis.Sample import DirectorySample
+from metis.Path import Path
+from metis.StatsParser import StatsParser
 import time
 
 lhe = CMSSWTask(
@@ -59,5 +58,5 @@ for _ in range(25):
         task.process()
         summary = task.get_task_summary()
         total_summary[task.get_sample().get_datasetname()] = summary
-    write_web_summary(data=total_summary, webdir="~/public_html/dump/metis_test/")
+    StatsParser(data=total_summary, webdir="~/public_html/dump/metis/").do()
     time.sleep(600)

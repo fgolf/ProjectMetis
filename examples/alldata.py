@@ -2,10 +2,9 @@ import time
 import itertools
 import json
 
-from Sample import DBSSample
-from CMSSWTask import CMSSWTask
-
-from StatsParser import StatsParser
+from metis.Sample import DBSSample
+from metis.CMSSWTask import CMSSWTask
+from metis.StatsParser import StatsParser
 
 if __name__ == "__main__":
 
