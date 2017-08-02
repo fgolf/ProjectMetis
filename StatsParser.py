@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import time
+import logging
 from pprint import pprint
 import LogParser
 import Utils
@@ -63,12 +64,16 @@ class StatsParser(object):
         self.webdir = webdir
         self.SUMMARY_NAME = "web_summary.json"
         self.do_history = do_history
+        self.logger = logging.getLogger(Utils.setup_logger())
 
         if not self.data:
             with open(self.summary_fname,"r") as fhin:
                 self.data = json.load(fhin)
 
     def do(self):
+
+        # with open("summary.json","w") as fhdump:
+        #     json.dump(self.data, fhdump)
 
         summaries = self.data.copy()
 
@@ -158,7 +163,7 @@ class StatsParser(object):
                     "missing_events": max(queriednevents-outnevents,0),
             }
             d_task["history"] = {
-                    "timestamps": [int(time.time())],
+                    "timestamps": [int(time.time()/300)*300], # round to latest 5 minute mark
                     "nevents_total": [d_task["general"]["nevents_total"]],
                     "nevents_done": [d_task["general"]["nevents_done"]],
                     "njobs_total": [d_task["general"]["njobs_total"]],
@@ -200,12 +205,14 @@ class StatsParser(object):
                     pass
 
         self.make_dashboard(d_web_summary)
+
+        self.logger.info("Updated dashboard at {0}".format(self.webdir))
                     
     def make_dashboard(self, d_web_summary):
 
         with open(self.SUMMARY_NAME, 'w') as fhout:
-            # json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
-            fhout.write(json.dumps(d_web_summary, sort_keys = True, indent = 4, separators=(',',': '), cls=CustomEncoder))
+            json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
+            # fhout.write(json.dumps(d_web_summary, sort_keys = True, indent = 4, separators=(',',': '), cls=CustomEncoder))
 
         Utils.update_dashboard(webdir=self.webdir, jsonfile=self.SUMMARY_NAME)
         
