@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import scipy.stats
-from tqdm import *
+# from tqdm import *
 
 #Other imports
 import LogParser as lp
@@ -213,4 +213,4 @@ def plot_Profile(logObjPile, title, xkey, ykey, bins, norm_toggle):
 #Debugging operations
 if __name__ == "__main__":
     fPile = get_log_files("/home/jguiang/ProjectMetis/log_files/tasks", ".out")
-    logObjPile = tqdm_parse_log_files(fPile)
+    # logObjPile = tqdm_parse_log_files(fPile)
