@@ -2,10 +2,10 @@ import os
 import time
 import unittest
 
-from metis.DummyTask import DummyMoveTask
-from metis.Path import Path
-from metis.File import File
-from metis.Utils import do_cmd
+from DummyTask import DummyMoveTask
+from Path import Path
+from File import File
+from Utils import do_cmd
 
 
 class DummyMoveWorkflowTest(unittest.TestCase):

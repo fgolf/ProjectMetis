@@ -1,9 +1,9 @@
 import unittest
 import os
 
-from metis.Sample import Sample, DBSSample, DirectorySample, SNTSample
-from metis.Constants import Constants
-import metis.Utils as Utils
+from Sample import Sample, DBSSample, DirectorySample, SNTSample
+from Constants import Constants
+import Utils
 
 class SampleTest(unittest.TestCase):
 

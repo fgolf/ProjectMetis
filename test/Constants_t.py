@@ -1,6 +1,6 @@
 import unittest
 
-from metis.Constants import Constants
+from Constants import Constants
 
 
 class ConstantsTest(unittest.TestCase):

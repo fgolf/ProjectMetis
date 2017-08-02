@@ -46,7 +46,7 @@ def sum_dicts(dicts):
             ret[k] += v
     return dict(ret)
 
-def setup_logger(logger_name="logger_metis"):
+def setup_logger(logger_name="metis_logger"):
     """
     logger_name = u.setup_logger()
     logger = logging.getLogger(logger_name)

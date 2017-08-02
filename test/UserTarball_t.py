@@ -1,8 +1,8 @@
 import unittest
 import os
 
-import metis.UserTarball as UserTarball
-import metis.Utils as Utils
+import UserTarball
+import Utils
 
 class UserTarballTest(unittest.TestCase):
     def test_make_tar(self):

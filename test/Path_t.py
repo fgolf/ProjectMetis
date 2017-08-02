@@ -1,8 +1,8 @@
 import unittest
 
-from metis.Path import Path
-from metis.Constants import Constants
-from metis.Task import Task
+from Path import Path
+from Constants import Constants
+from Task import Task
 
 class PathTest(unittest.TestCase):
     def test_get_tasks(self):

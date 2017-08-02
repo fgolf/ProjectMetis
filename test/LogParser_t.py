@@ -1,8 +1,8 @@
 import unittest
 import os
 
-import metis.LogParser as LogParser
-import metis.Utils as Utils
+import LogParser
+import Utils
 
 class LogParserTest(unittest.TestCase):
 

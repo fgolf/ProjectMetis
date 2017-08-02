@@ -4,10 +4,10 @@ import time
 import logging
 import glob
 
-import metis.Utils as Utils
-from metis.Sample import DirectorySample
-from metis.CondorTask import CondorTask
-from metis.File import File
+import Utils
+from Sample import DirectorySample
+from CondorTask import CondorTask
+from File import File
 
 
 class CondorTaskTest(unittest.TestCase):
@@ -32,7 +32,7 @@ class CondorTaskTest(unittest.TestCase):
         # make dummy CondorTask with the files we
         # touched in the basedir, and chunk
         # the outputs
-        logging.getLogger("logger_metis").disabled = True
+        logging.getLogger("metis_logger").disabled = True
         cls.dummy = CondorTask(
                 sample = DirectorySample(
                     location = basedir,

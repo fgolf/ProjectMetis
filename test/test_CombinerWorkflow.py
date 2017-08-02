@@ -2,10 +2,10 @@ import os
 import time
 import unittest
 
-from metis.CombinerTask import CombinerTask
-from metis.Utils import do_cmd
-from metis.Path import Path
-from metis.File import File
+from CombinerTask import CombinerTask
+from Utils import do_cmd
+from Path import Path
+from File import File
 
 from pprint import pprint
 

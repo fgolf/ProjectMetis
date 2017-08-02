@@ -2,8 +2,7 @@ import unittest
 import os
 import time
 
-import metis.Utils as Utils
-from metis.File import EventsFile
+import Utils
 
 class UtilsTest(unittest.TestCase):
 
@@ -11,6 +10,7 @@ class UtilsTest(unittest.TestCase):
         self.assertEqual(Utils.do_cmd("echo $USER"), os.getenv("USER"))
 
     def test_file_chunker(self):
+        from File import EventsFile
         files = [
             EventsFile("blah1.root",nevents=100),
             EventsFile("blah2.root",nevents=200),

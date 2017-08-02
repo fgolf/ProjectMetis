@@ -1,9 +1,9 @@
 import unittest
 import os
 
-from metis.File import File, EventsFile, FileDBS
-from metis.Constants import Constants
-import metis.Utils as Utils
+from File import File, EventsFile, FileDBS
+from Constants import Constants
+import Utils
 
 class FileTest(unittest.TestCase):
 
