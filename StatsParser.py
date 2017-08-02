@@ -6,13 +6,63 @@ from pprint import pprint
 import LogParser
 import Utils
 
+class CustomEncoder(json.JSONEncoder):
+    """
+    stolen from
+    https://stackoverflow.com/questions/16264515/json-dumps-custom-formatting
+    """
+    def __init__(self, *args, **kwargs):
+        super(CustomEncoder, self).__init__(*args, **kwargs)
+        self.current_indent = 0
+        self.current_indent_str = ""
+
+    def encode(self, o):
+        #Special Processing for lists
+        if isinstance(o, (list, tuple)):
+            primitives_only = True
+            for item in o:
+                if isinstance(item, (list, tuple, dict)):
+                    primitives_only = False
+                    break
+            output = []
+            if primitives_only:
+                for item in o:
+                    output.append(json.dumps(item))
+                return "[ " + ", ".join(output) + " ]"
+            else:
+                self.current_indent += self.indent
+                self.current_indent_str = "".join( [ " " for x in range(self.current_indent) ])
+                for item in o:
+                    output.append(self.current_indent_str + self.encode(item))
+                self.current_indent -= self.indent
+                self.current_indent_str = "".join( [ " " for x in range(self.current_indent) ])
+                return "[\n" + ",\n".join(output) + "\n" + self.current_indent_str + "]"
+        elif isinstance(o, dict):
+            output = []
+            self.current_indent += self.indent
+            self.current_indent_str = "".join( [ " " for x in range(self.current_indent) ])
+            for key, value in o.iteritems():
+                output.append(self.current_indent_str + json.dumps(key) + ": " + self.encode(value))
+            self.current_indent -= self.indent
+            self.current_indent_str = "".join( [ " " for x in range(self.current_indent) ])
+            return "{\n" + ",\n".join(output) + "\n" + self.current_indent_str + "}"
+        else:
+            return json.dumps(o)
+
+def merge_histories(hold, hnew):
+    if not hold: return hnew
+    for key in hnew.keys():
+        hnew[key] = hold.get(key,[]) + hnew[key]
+    return hnew
+
 class StatsParser(object):
 
-    def __init__(self, data = {}, summary_fname="summary.json", webdir="~/public_html/dump/metis_test/"):
+    def __init__(self, data = {}, summary_fname="summary.json", webdir="~/public_html/dump/metis_test/", do_history=True):
         self.data = data
         self.summary_fname = summary_fname
         self.webdir = webdir
         self.SUMMARY_NAME = "web_summary.json"
+        self.do_history = do_history
 
         if not self.data:
             with open(self.summary_fname,"r") as fhin:
@@ -107,6 +157,13 @@ class StatsParser(object):
                     "jobs_not_done": bad_jobs,
                     "missing_events": max(queriednevents-outnevents,0),
             }
+            d_task["history"] = {
+                    "timestamps": [int(time.time())],
+                    "nevents_total": [d_task["general"]["nevents_total"]],
+                    "nevents_done": [d_task["general"]["nevents_done"]],
+                    "njobs_total": [d_task["general"]["njobs_total"]],
+                    "njobs_done": [d_task["general"]["njobs_done"]],
+            }
             tasks.append(d_task)
 
         d_web_summary = {
@@ -119,17 +176,36 @@ class StatsParser(object):
         # datasets)
         if os.path.exists(self.SUMMARY_NAME):
             with open(self.SUMMARY_NAME, 'r') as fhin:
-                data_in = json.load(fhin)
-                for task in data_in.get("tasks",[]):
-                    if task["general"]["dataset"] not in [t["general"]["dataset"] for t in tasks]:
-                        d_web_summary["tasks"].append(task)
+                try:
+                    data_in = json.load(fhin)
+                    all_datasets = [t["general"]["dataset"] for t in tasks]
+                    for task in data_in.get("tasks",[]):
+                        if task["general"]["dataset"] not in all_datasets:
+                            d_web_summary["tasks"].append(task)
+                        else:
+                            old_history = task.get("history",{})
+                            new_task = [t for t in tasks if t["general"]["dataset"] == task["general"]["dataset"]][0]
+                            new_history = new_task.get("history", {})
+                            # print new_task
+                            if self.do_history:
+                                # print "old", old_history
+                                # print "new", new_history
+                                new_task["history"] = merge_histories(old_history, new_history)
+                                # print merge_histories(old_history, new_history)
+                            # print task
+                            # print task["history"]
+                except ValueError:
+                    # if we fail to decode JSON, 
+                    # could be because the summary file is just empty
+                    pass
 
         self.make_dashboard(d_web_summary)
                     
     def make_dashboard(self, d_web_summary):
 
         with open(self.SUMMARY_NAME, 'w') as fhout:
-            json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
+            # json.dump(d_web_summary, fhout, sort_keys = True, indent = 4, separators=(',',': '))
+            fhout.write(json.dumps(d_web_summary, sort_keys = True, indent = 4, separators=(',',': '), cls=CustomEncoder))
 
         Utils.update_dashboard(webdir=self.webdir, jsonfile=self.SUMMARY_NAME)
         
