@@ -267,7 +267,7 @@ class CondorTask(Task):
                         self.logger.info("Job {0} for ({1}) removed for excessive hold time".format(cluster_id, out))
                         Utils.condor_rm([cluster_id])
 
-    def process(self):
+    def process(self, fake=False):
         """
         Prepare inputs
         Execute main logic
@@ -276,7 +276,7 @@ class CondorTask(Task):
         # set up condor input if it's the first time submitting
         if not self.prepared_inputs: self.prepare_inputs()
 
-        self.run()
+        self.run(fake=fake)
         self.logger.info("Ended processing {0}".format(self.sample.get_datasetname()))
 
         if self.complete():
