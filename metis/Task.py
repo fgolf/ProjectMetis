@@ -25,7 +25,8 @@ class Task(object):
         # if not hasattr(self, "to_backup"):
         #     self.to_backup = []
 
-        self.load()
+        if not self.kwargs.get("no_load_from_backup",False):
+            self.load()
 
     def __repr__(self):
         """
