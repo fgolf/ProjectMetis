@@ -25,16 +25,6 @@ echo "args: $@"
 
 echo -e "\n--- end header output ---\n" #                       <----- section division
 
-source /cvmfs/cms.cern.ch/cmsset_default.sh
-
-export SCRAM_ARCH=${SCRAMARCH}
-
-eval `scramv1 project CMSSW $CMSSWVERSION`
-cd $CMSSWVERSION
-eval `scramv1 runtime -sh`
-mv ../package.tar.gz package.tar.gz
-tar xzf package.tar.gz
-
 # logging every 60 seconds gives ~100kb log file/3 hours
 dstat -cdngytlmrs --float --nocolor -T --output dsout.csv 60 >& /dev/null &
 
@@ -62,3 +52,5 @@ cat dsout.csv
 echo -e "\n--- end dstat output ---\n" #                        <----- section division
 kill %1 # kill dstat
 
+rm dsout.csv
+rm ${OUTPUTNAME}.root
