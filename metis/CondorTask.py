@@ -278,12 +278,13 @@ class CondorTask(Task):
         if not self.prepared_inputs: self.prepare_inputs()
 
         self.run(fake=fake)
-        self.logger.info("Ended processing {0}".format(self.sample.get_datasetname()))
 
         if self.complete():
             self.finalize()
 
         self.backup()
+
+        self.logger.info("Ended processing {0}".format(self.sample.get_datasetname()))
 
     def finalize(self):
         """
@@ -319,8 +320,7 @@ class CondorTask(Task):
         logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
         package_full = os.path.abspath(self.package_path)
         input_files = [package_full] if self.tarfile else []
-        extra = {}
-        if self.kwargs.get("submit_sites",""): extra["sites"] = ",".join(self.kwargs["submit_sites"])
+        extra = self.kwargs.get("condor_submit_params", {})
         return Utils.condor_submit(executable=executable, arguments=arguments,
                 inputfiles=input_files, logdir=logdir_full,
                 selection_pairs=[["taskname",self.unique_name],["jobnum",index]],
