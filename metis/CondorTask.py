@@ -247,6 +247,7 @@ class CondorTask(Task):
         return_fraction specified as True
         """
         self.recache_outputs()
+        print('status: ',list(map(lambda output: output.get_status(), self.get_outputs())))
         bools = list(map(lambda output: output.get_status() == Constants.DONE, self.get_outputs()))
         if len(bools) == 0:
             frac = 0.
@@ -282,7 +283,7 @@ class CondorTask(Task):
                 continue
             new_mapping.append([ins,out])
         for fname in files_to_remove:
-            Utils.do_cmd("rm {}".format(fname))
+            Utils.do_cmd_safe(["rm", fname])
             self.logger.info("Tail root file {} removed".format(fname))
         self.io_mapping = new_mapping
 
@@ -352,7 +353,7 @@ class CondorTask(Task):
             v_ins = [d["ins"] for d in to_submit]
             v_out = [d["out"] for d in to_submit]
             succeeded, cluster_id = self.submit_multiple_condor_jobs(v_ins, v_out, fake=fake, optimizer=optimizer)
-            procids = map(str,range(len(v_out)))
+            procids = list(map(str,range(len(v_out))))
             if succeeded:
                 for out,procid in zip(v_out,procids):
                     index = out.get_index()  # "merged_ntuple_42.root" --> 42
@@ -419,6 +420,7 @@ class CondorTask(Task):
         if (not self.prepared_inputs) or self.recopy_inputs:
             self.prepare_inputs()
 
+        #print('io_mapping: ',self.io_mapping())
 
         self.run(fake=fake, optimizer=optimizer)
 
@@ -452,6 +454,9 @@ class CondorTask(Task):
     def submit_multiple_condor_jobs(self, v_ins, v_out, fake=False, optimizer=None):
 
         outdir = self.output_dir
+        prefix="/ceph/cms"
+        if self.output_dir.startswith(prefix):
+            outdir = self.output_dir[len(prefix):]
         outname_noext = self.output_name.rsplit(".", 1)[0]
         v_inputs_commasep = [",".join(map(lambda x: x.get_name(), ins)) for ins in v_ins]
         v_index = [out.get_index() for out in v_out]
@@ -528,11 +533,11 @@ class CondorTask(Task):
         self.package_path = "{0}/package.tar.gz".format(self.get_taskdir())
 
         # take care of executable. easy.
-        Utils.do_cmd("cp {0} {1}".format(self.input_executable, self.executable_path))
+        Utils.do_cmd_safe(["cp", self.input_executable, self.executable_path])
 
         # take care of package tar file if we were told to. easy.
         if self.tarfile:
-            Utils.do_cmd("cp {0} {1}".format(self.tarfile, self.package_path))
+            Utils.do_cmd_safe(["cp", self.tarfile, self.package_path])
 
         self.prepared_inputs = True
 
@@ -596,7 +601,7 @@ class CondorTask(Task):
             d_jobs[index] = {}
             d_jobs[index]["output"] = [out.get_name(), out.get_nevents()]
             d_jobs[index]["output_exists"] = out.exists()
-            d_jobs[index]["inputs"] = map(lambda x: [x.get_name(), x.get_nevents()], ins)
+            d_jobs[index]["inputs"] = list(map(lambda x: [x.get_name(), x.get_nevents()], ins))
             submission_history = d_history.get(index, [])
             is_on_condor = False
             last_clusterid = -1

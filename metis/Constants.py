@@ -1,11 +1,10 @@
-class Enum(object):
-    class __metaclass__(type):
-        def __getitem__(self, key):
-            return "Constants.{0}".format([item for item in self.__dict__ if key == self.__dict__[item]][0])
-        def get_name(self, key):
-            return "Constants.{0}".format([item for item in self.__dict__ if key == self.__dict__[item]][0])
+class EnumMeta(type):
+    def __getitem__(cls, key):
+        return "Constants.{0}".format([item for item in cls.__dict__ if key == cls.__dict__[item]][0])
+    def get_name(cls, key):
+        return "Constants.{0}".format([item for item in cls.__dict__ if key == cls.__dict__[item]][0])
 
-class Constants(Enum):
+class Constants(metaclass=EnumMeta):
     DONE = 1
     PARTIAL_DONE = 2
     FAIL = 3

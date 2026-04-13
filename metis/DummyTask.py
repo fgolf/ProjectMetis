@@ -1,5 +1,5 @@
 from metis.Task import Task
-from metis.Utils import do_cmd
+from metis.Utils import do_cmd, do_cmd_safe
 
 class DummyMoveTask(Task):
     def __init__(self, **kwargs):
@@ -32,10 +32,10 @@ class DummyMoveTask(Task):
 
             if self.create_inputs and not inp.exists():
                 self.logger.debug("Specified create_inputs=True, so creating input file {}".format(inp.get_name()))
-                do_cmd("touch {}".format(inp.get_name()))
+                do_cmd_safe(["touch", inp.get_name()])
                 inp.recheck()
 
-            do_cmd("mv {} {}".format(inp.get_name(), out.get_name()))
+            do_cmd_safe(["mv", inp.get_name(), out.get_name()])
             out.recheck()
             self.logger.debug("Running on {0} -> {1}".format(inp.get_name(), out.get_name()))
 

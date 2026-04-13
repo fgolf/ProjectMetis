@@ -99,7 +99,7 @@ class CondorTaskTest(unittest.TestCase):
         history = self.dummy.get_job_submission_history()
         ijobs = range(1,(self.nfiles+1)//self.files_per_job+1)
         self.assertEqual(sorted(history.keys()), list(ijobs))
-        ids = [map(lambda x:int(x.split(".")[0]),x) for x in list(history.values())]
+        ids = [list(map(lambda x:int(x.split(".")[0]),x)) for x in list(history.values())]
         self.assertEqual(ids, [[-1] for _ in ijobs])
 
     def test_backup(self):

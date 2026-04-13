@@ -46,7 +46,7 @@ class File(object):
         return hash(self.name)
 
     def __eq__(self, other):
-        if type(other) in [unicode, str]:
+        if isinstance(other, str):
             return self.name == other
         else:
             return self.name == other.get_name()
@@ -224,15 +224,19 @@ class MutableFile(ImmutableFile):
     
     def touch(self):
         if self.name.endswith("/"):
-            os.system("mkdir -p {0}".format(self.name))
+            os.makedirs(self.name, exist_ok=True)
         else:
-            os.system("touch {0}".format(self.name))
+            # Ensure parent directory exists, then touch
+            parent = os.path.dirname(self.name)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            open(self.name, "a").close()
 
     def rm(self):
         if os.path.isdir(self.name):
-            os.system("rmdir {0}".format(self.name))
+            os.rmdir(self.name)
         elif os.path.isfile(self.name):
-            os.system("rm {0}".format(self.name))
+            os.remove(self.name)
 
     def append(self, content):
         self.touch()
@@ -243,7 +247,16 @@ class MutableFile(ImmutableFile):
     def chmod(self, tomod=None):
         if tomod:
             if os.path.isfile(self.name):
-                os.system("chmod {0} {1}".format(tomod, self.name))
+                if isinstance(tomod, int):
+                    # Numeric mode passed as int (e.g. 644 meaning octal 0o644)
+                    os.chmod(self.name, int(str(tomod), 8))
+                elif isinstance(tomod, str) and tomod.isdigit():
+                    # Numeric mode passed as string (e.g. "644")
+                    os.chmod(self.name, int(tomod, 8))
+                else:
+                    # Symbolic mode (e.g. "u+x") — fall back to subprocess
+                    import subprocess
+                    subprocess.run(["chmod", str(tomod), self.name], check=True)
         else:
             return int(oct(os.stat(self.name).st_mode)[-3:])
 

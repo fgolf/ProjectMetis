@@ -1,14 +1,11 @@
-from __future__ import print_function
-
 import logging
 import glob
 import time
 import datetime
 import os
+import re
 import fnmatch
 import json
-
-import scripts.dis_client as dis
 
 from metis.Constants import Constants
 from metis.Utils import setup_logger, cached, do_cmd
@@ -16,6 +13,20 @@ from metis.File import FileDBS, EventsFile, ImmutableFile, MutableFile
 
 DIS_CACHE_SECONDS = 5*60
 if os.getenv("NOCACHE"): DIS_CACHE_SECONDS = 0
+
+# Dataset name validation: /Primary/Processed/Tier with allowed chars
+_DATASET_PATTERN = re.compile(r'^/[A-Za-z0-9\-_.*?]+(/[A-Za-z0-9\-_.*?]+){0,2}$')
+
+def _validate_dataset(dataset):
+    """Validate that a dataset name looks like a CMS dataset path.
+    Allows wildcards (* and ?) for search queries.
+    Raises ValueError if the format is suspicious."""
+    ds = dataset.replace(",all", "").strip()
+    if not ds:
+        raise ValueError("Empty dataset name")
+    if not _DATASET_PATTERN.match(ds):
+        raise ValueError("Invalid dataset format: {}".format(ds))
+    return ds
 
 class Sample(object):
     """
@@ -49,99 +60,214 @@ class Sample(object):
     def __repr__(self):
         return "<{0} dataset={1}>".format(self.__class__.__name__, self.info["dataset"])
 
-    # @cached(default_max_age = datetime.timedelta(seconds=DIS_CACHE_SECONDS))
+    def _get_das_client(self):
+        """Get or create a DAS client instance (from mcm-tools das_api)."""
+        if not hasattr(self, '_das_client') or self._das_client is None:
+            try:
+                from das_api import DAS
+                self._das_client = DAS()
+            except ImportError:
+                self.logger.error("Cannot import das_api. Make sure mcm-tools is on your PYTHONPATH.")
+                raise
+        return self._das_client
+
     def do_dis_query(self, ds, typ="files"):
+        """
+        Query dataset info via DBS (through mcm-tools DAS API).
+        Replaces the old DIS server queries for file and config lookups.
+        """
+        self.logger.debug("Doing DBS query of type {0} for {1}".format(typ, ds))
 
-        self.logger.debug("Doing DIS query of type {0} for {1}".format(typ, ds))
-
-        rawresponse = dis.query(ds, typ=typ, detail=True)
-        response = rawresponse["payload"]
-        if not len(response):
-            self.logger.error("Query failed with response:" + str(rawresponse))
-
-        return response
-
-    def load_from_dis(self):
-
-        (status, val) = self.check_params_for_dis_query()
-        if not status:
-            self.logger.error("[Dataset] Failed to load info for dataset %s from DIS because parameter %s is missing." % (self.info["dataset"], val))
-            return False
-
-        query_str = "status=%s, dataset_name=%s, sample_type=%s" % (Constants.VALID_STR, self.info["dataset"], self.info["type"])
-        if self.info["type"] != "CMS3":
-            query_str += ", analysis=%s" % (self.info["analysis"])
-        if self.info["tag"]:
-            query_str += ", cms3tag=%s" % (self.info["tag"])
-
-        response = {}
+        # Validate dataset name format to prevent query injection
         try:
-            response = dis.query(query_str, typ='snt', detail=True)
-            response = response["payload"]
-            if len(response) == 0:
-                self.logger.error(" Query found no matching samples for: status = %s, dataset = %s, type = %s analysis = %s" % (self.info["status"], self.info["dataset"], self.info["type"], self.info["analysis"]))
-                return False
+            _validate_dataset(ds)
+        except ValueError as e:
+            self.logger.error("Dataset validation failed: {}".format(e))
+            return [] if typ == "files" else {}
 
-            if len(response) > 1:
-                # response = self.sort_query_by_key(response,"timestamp")
-                response = self.sort_query_by_key(response,"cms3tag")
+        das = self._get_das_client()
 
-            if hasattr(self,"exclude_tag_pattern") and self.exclude_tag_pattern:
-                new_response = []
-                for samp in response:
-                    tag = samp.get("tag", samp.get("cms3tag", ""))
-                    if fnmatch.fnmatch(tag,self.exclude_tag_pattern): continue
-                    new_response.append(samp)
-                response = new_response
+        if typ == "files":
+            # Strip ",all" suffix if present (was used for allow_invalid_files)
+            dataset = ds.replace(",all", "").strip()
+            valid_only = ",all" not in ds
+            raw_files = das.files(dataset, detail=True, validFileOnly=valid_only)
+            # Transform to the format Metis expects: list of dicts with name, nevents, sizeGB
+            response = []
+            for f in raw_files:
+                response.append({
+                    "name": f["logical_file_name"],
+                    "nevents": f.get("event_count", 0),
+                    "sizeGB": round(f.get("file_size", 0) * 1e-9, 2),
+                })
+            return response
 
-            self.info["gtag"] = response[0]["gtag"]
-            self.info["kfact"] = response[0]["kfactor"]
-            self.info["xsec"] = response[0]["xsec"]
-            self.info["filtname"] = response[0].get("filter_name", "NoFilter")
-            self.info["efact"] = response[0]["filter_eff"]
-            self.info["analysis"] = response[0].get("analysis", "")
-            self.info["tag"] = response[0].get("tag", response[0].get("cms3tag"))
-            self.info["version"] = response[0].get("version", "v1.0")
-            self.info["nevts_in"] = response[0]["nevents_in"]
-            self.info["nevts"] = response[0]["nevents_out"]
-            self.info["location"] = response[0]["location"]
-            self.info["status"] = response[0].get("status", Constants.VALID_STR)
-            self.info["twiki"] = response[0].get("twiki_name", "")
-            self.info["files"] = response[0].get("files", [])
-            self.info["comments"] = response[0].get("comments", "")
-            return True
-        except:
+        elif typ == "config":
+            dataset = ds.strip()
+            configs = das.output_configs(dataset)
+            if configs:
+                return {
+                    "global_tag": configs[0].get("global_tag", ""),
+                    "release_version": configs[0].get("release_version", ""),
+                    "native_cmssw": configs[0].get("release_version", ""),
+                }
+            self.logger.error("No config found for dataset: {}".format(dataset))
+            return {}
+
+        else:
+            self.logger.warning("Query type '{}' not supported via DBS API. DIS server may be needed.".format(typ))
+            return []
+
+    def _get_dis_client(self):
+        """Get or create a DIS client module reference."""
+        if not hasattr(self, '_dis_client') or self._dis_client is None:
+            try:
+                import scripts.dis_client as dis_client
+                self._dis_client = dis_client
+            except ImportError:
+                try:
+                    import dis_client
+                    self._dis_client = dis_client
+                except ImportError:
+                    self._dis_client = None
+                    self.logger.warning("dis_client module not available")
+        return self._dis_client
+
+    @cached(default_max_age=DIS_CACHE_SECONDS)
+    def load_from_dis(self):
+        """
+        Load sample metadata from the SNT DIS database via dis_server.py.
+        Queries the DIS server for SNT sample info and populates self.info.
+        Falls back gracefully if the DIS server is not running.
+        """
+        dis = self._get_dis_client()
+        if dis is None:
+            self.logger.warning("Cannot load from DIS: dis_client not available")
             return False
+
+        dataset = self.info.get("dataset", "")
+        if not dataset:
+            return False
+
+        # Build query with available filters
+        query_parts = [dataset]
+        typ = getattr(self, 'typ', self.info.get("type", "CMS3"))
+        if typ:
+            query_parts.append("sample_type={}".format(typ))
+        tag = self.info.get("tag", "")
+        if tag:
+            query_parts.append("cms3tag={}".format(tag))
+
+        query_str = ",".join(query_parts)
+
+        try:
+            data = dis.query(query_str, typ="snt")
+        except Exception as e:
+            self.logger.warning("DIS query failed: {}".format(e))
+            return False
+
+        if not data or data.get("status") != "success":
+            self.logger.warning("DIS returned no results for: {}".format(query_str))
+            return False
+
+        payload = data.get("payload", [])
+        if not payload or not isinstance(payload, list):
+            return False
+
+        # If exclude_tag_pattern is set, filter results
+        exclude = getattr(self, 'exclude_tag_pattern', '')
+        if exclude:
+            payload = [p for p in payload if not fnmatch.fnmatch(p.get("cms3tag", ""), exclude)]
+        if not payload:
+            return False
+
+        # Take the first (most recently updated) match
+        result = payload[0]
+
+        # Map DIS fields to Sample.info fields
+        field_map = {
+            "xsec": "xsec",
+            "kfact": "kfact",
+            "efact": "efact",
+            "filtname": "filtname",
+            "gtag": "gtag",
+            "location": "location",
+            "nevents_in": "nevts",
+            "nevents_out": "nevents",
+            "cms3tag": "tag",
+            "twiki_name": "twiki",
+            "comments": "comments",
+            "status": "status",
+            "sample_type": "type",
+            "analysis": "analysis",
+        }
+        for dis_key, info_key in field_map.items():
+            val = result.get(dis_key)
+            if val is not None and val != "" and val != -1.0:
+                self.info[info_key] = val
+
+        return True
 
     def do_update_dis(self):
-
-        if hasattr(self,"read_only") and self.read_only:
+        """
+        Publish sample info back to the SNT DIS database via dis_server.py.
+        """
+        if hasattr(self, "read_only") and self.read_only:
             self.logger.debug("Not updating DIS since this sample has read_only=True")
             return False
 
-        self.logger.debug("Updating DIS")
-        query_str = "dataset_name={},sample_type={},cms3tag={},gtag={},location={},nevents_in={},nevents_out={},xsec={},kfactor={},filter_eff={},timestamp={}".format(
-           self.info["dataset"], self.info["tier"], self.info["tag"], self.info["gtag"],
-           self.info["location"], self.info["nevents_in"], self.info["nevents"],
-           self.info["xsec"], self.info["kfact"], self.info["efact"], int(time.time())
-        )
+        dis = self._get_dis_client()
+        if dis is None:
+            self.logger.warning("Cannot update DIS: dis_client not available")
+            return False
 
-        response = {}
+        dataset = self.info.get("dataset", "")
+        if not dataset:
+            return False
+
+        # Build key=value query for update_snt
+        parts = ["dataset_name={}".format(dataset)]
+        info_to_dis = {
+            "xsec": "xsec",
+            "kfact": "kfact",
+            "efact": "efact",
+            "filtname": "filtname",
+            "gtag": "gtag",
+            "location": "location",
+            "tag": "cms3tag",
+            "twiki": "twiki_name",
+            "comments": "comments",
+            "status": "status",
+            "analysis": "analysis",
+        }
+        for info_key, dis_key in info_to_dis.items():
+            val = self.info.get(info_key)
+            if val is not None:
+                parts.append("{}={}".format(dis_key, val))
+
+        typ = getattr(self, 'typ', self.info.get("type", "CMS3"))
+        if typ:
+            parts.append("sample_type={}".format(typ))
+
+        nevts = self.info.get("nevts", self.info.get("nevents_in"))
+        if nevts is not None:
+            parts.append("nevents_in={}".format(nevts))
+
+        nevents = self.info.get("nevents")
+        if nevents is not None:
+            parts.append("nevents_out={}".format(nevents))
+
+        query_str = ",".join(parts)
+
         try:
-            succeeded = False
-            response = dis.query(query_str, typ='update_snt')
-            response = response["payload"]
-            if "updated" in response and str(response["updated"]).lower() == "true":
-                succeeded = True
-            self.logger.debug("Updated DIS")
-        except:
-            pass
-
-        if not succeeded:
-            self.logger.debug("WARNING: failed to update sample using DIS with query_str: {}".format(query_str))
-            self.logger.debug("WARNING: got response: {}".format(response))
-
-        return succeeded
+            data = dis.query(query_str, typ="update_snt")
+            if data.get("status") == "success":
+                return True
+            self.logger.warning("DIS update failed: {}".format(data))
+            return False
+        except Exception as e:
+            self.logger.warning("DIS update failed: {}".format(e))
+            return False
 
     def check_params_for_dis_query(self):
         if "dataset" not in self.info:
@@ -184,17 +310,12 @@ class Sample(object):
 
 class DBSSample(Sample):
     """
-    Sample which queries DBS (through DIS)
-    for central samples
+    Sample which queries DBS (via mcm-tools DAS API) for central samples.
     """
 
     def __init__(self, **kwargs):
 
         self.allow_invalid_files = kwargs.get("allow_invalid_files", False)
-        self.dasgoclient = kwargs.get("dasgoclient", False) # use dasgoclient instead of DIS
-
-        if os.getenv("USEDASGOCLIENT", False):
-            self.dasgoclient = True
 
         super(DBSSample, self).__init__(**kwargs)
 
@@ -206,72 +327,50 @@ class DBSSample(Sample):
         """
         self.selection = selection
 
-    def load_from_dis(self):
-
+    def load_from_dbs(self):
+        """Load file listing from DBS via the mcm-tools DAS API."""
         query = self.info["dataset"]
         if self.allow_invalid_files:
             query += ",all"
         response = self.do_dis_query(query, typ="files")
         fileobjs = [
                 FileDBS(name=fdict["name"], nevents=fdict["nevents"], filesizeGB=fdict["sizeGB"]) for fdict in response
-                if (not hasattr(self,"selection") or self.selection(fdict["name"]))
+                if (not hasattr(self, "selection") or self.selection(fdict["name"]))
                 ]
         fileobjs = sorted(fileobjs, key=lambda x: x.get_name())
 
         self.info["files"] = fileobjs
         self.info["nevts"] = sum(fo.get_nevents() for fo in fileobjs)
 
-    def load_from_dasgoclient(self):
-
-        cmd = "dasgoclient -query 'file dataset={}' -json".format(self.info["dataset"])
-        js = json.loads(do_cmd(cmd))
-        fileobjs = []
-        for j in js:
-            f = j["file"][0]
-            if (not hasattr(self,"selection") or self.selection(fdict["name"])):
-                fileobjs.append(FileDBS(name=f["name"], nevents=f["nevents"], filesizeGB=round(f["size"]*1e-9,2)))
-        fileobjs = sorted(fileobjs, key=lambda x: x.get_name())
-
-        self.info["files"] = fileobjs
-        self.info["nevts"] = sum(fo.get_nevents() for fo in fileobjs)
+    # Keep old name as alias for compatibility
+    load_from_dis = load_from_dbs
 
     def get_nevents(self):
         if self.info.get("nevts", None):
             return self.info["nevts"]
-        if self.dasgoclient:
-            self.load_from_dasgoclient()
-        else:
-            self.load_from_dis()
+        self.load_from_dbs()
         return self.info["nevts"]
 
     def get_files(self):
         if self.info.get("files", None):
             return self.info["files"]
-        if self.dasgoclient:
-            self.load_from_dasgoclient()
-        else:
-            self.load_from_dis()
+        self.load_from_dbs()
         return self.info["files"]
 
     def get_globaltag(self):
         if self.info.get("gtag", None):
             return self.info["gtag"]
-        if self.dasgoclient:
-            cmd = "dasgoclient -query 'config dataset={} system=dbs3' -json".format(self.info["dataset"])
-            js = json.loads(do_cmd(cmd))
-            response = js[0]["config"][0]
-        else:
-            response = self.do_dis_query(self.info["dataset"], typ="config")
-        self.info["gtag"] = str(response["global_tag"])
-        self.info["native_cmssw"] = str(response["release_version"])
+        response = self.do_dis_query(self.info["dataset"], typ="config")
+        self.info["gtag"] = str(response.get("global_tag", ""))
+        self.info["native_cmssw"] = str(response.get("release_version", ""))
         return self.info["gtag"]
 
     def get_native_cmssw(self):
         if self.info.get("native_cmssw", None):
             return self.info["native_cmssw"]
         response = self.do_dis_query(self.info["dataset"], typ="config")
-        self.info["gtag"] = response["global_tag"]
-        self.info["native_cmssw"] = response["native_cmssw"]
+        self.info["gtag"] = response.get("global_tag", "")
+        self.info["native_cmssw"] = response.get("native_cmssw", response.get("release_version", ""))
         return self.info["native_cmssw"]
 
 class DirectorySample(Sample):
@@ -422,7 +521,7 @@ class FilelistSample(DirectorySample):
         else:
             imf = ImmutableFile(self.filelist)
             if not imf.exists(): raise Exception("Filelist {} does not exist!".format(imf.get_name()))
-            filepaths = map(lambda x: x.strip(), imf.cat().splitlines())
+            filepaths = list(map(lambda x: x.strip(), imf.cat().splitlines()))
         filepaths, nevents = self.separate_paths_events(filepaths)
 
         if self.use_xrootd:
@@ -436,11 +535,12 @@ class FilelistSample(DirectorySample):
         return self.info["files"]
 
     def separate_paths_events(self, thelist):
+        thelist = list(thelist)
         if len(thelist) > 0:
             if len(thelist[0]) == 2:
                 filepaths, nevents = zip(*thelist)
-                nevents = map(int, nevents)
-                return filepaths, nevents
+                nevents = list(map(int, nevents))
+                return list(filepaths), nevents
         return thelist, []
 
 
@@ -470,7 +570,7 @@ class DummySample(DirectorySample):
             return self.info["files"]
         extra = {}
         nevents_per_file = 0
-        if self.info.get("nevents",0) > 0:
+        if (self.info.get("nevents", None) or 0) > 0:
             nevents_per_file = int(self.info["nevents"] / self.n_dummy_files)
             self.info["nevts"] = self.info["nevents"]
         self.info["files"] = [EventsFile("{}_{}.{}".format(self.dummy_name,i,self.dummy_extension),fake=True,nevents=nevents_per_file) for i in range(self.n_dummy_files)]

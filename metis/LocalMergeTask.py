@@ -46,7 +46,7 @@ class LocalMergeTask(Task):
     def merge_function(self, inputs, output):
         # make the directory hosting the output if it doesn't exist
         fdir = output.get_basepath()
-        if not os.path.exists(fdir): Utils.do_cmd("mkdir -p {0}".format(fdir))
+        if not os.path.exists(fdir): Utils.do_cmd_safe(["mkdir", "-p", fdir])
 
         # when merging 1 file, TFileMerger defaults to a special case
         # of just copying the file. this screws up because of an issue

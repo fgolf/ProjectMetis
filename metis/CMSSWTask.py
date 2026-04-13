@@ -201,7 +201,7 @@ class CMSSWTask(CondorTask):
                 self.input_executable = to_check
 
         # take care of executable. easy.
-        Utils.do_cmd("cp {0} {1}".format(self.input_executable, self.executable_path))
+        Utils.do_cmd_safe(["cp", self.input_executable, self.executable_path])
 
         # add some stuff to end of pset (only tags and dataset name.
         # rest is done within the job in the executable)
@@ -258,7 +258,7 @@ def set_output_name(outputname):
                 fhin.write("\nif hasattr(process,\"RandomNumberGeneratorService\"): process.RandomNumberGeneratorService.externalLHEProducer.initialSeed = cms.untracked.uint32(int(__import__('random').getrandbits(17)))\n\n") # cmssw IOMC/RandomEngine/python/IOMC_cff.py
 
         # take care of package tar file. easy.
-        Utils.do_cmd("cp {0} {1}".format(self.tarfile, self.package_path))
+        Utils.do_cmd_safe(["cp", self.tarfile, self.package_path])
 
         self.prepared_inputs = True
 
@@ -300,7 +300,7 @@ def set_output_name(outputname):
         with open(metadata_file, "w") as fhout:
             json.dump(d_metadata, fhout, sort_keys=True, indent=4)
         # self.logger.info("Dumped metadata to {0}".format(metadata_file))
-        Utils.do_cmd("cp {0}/backup.pkl {1}/".format(self.get_taskdir(), d_metadata["finaldir"]))
+        Utils.do_cmd_safe(["cp", "{}/backup.pkl".format(self.get_taskdir()), "{}/".format(d_metadata["finaldir"])])
         self.logger.info("Dumped metadata and backup pickle")
 
     def supplement_task_summary(self, task_summary):

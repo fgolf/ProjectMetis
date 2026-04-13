@@ -4,8 +4,10 @@ import sys
 import itertools
 import traceback
 import datetime
-import urllib
+import urllib.request
+import urllib.parse
 import json
+from functools import reduce
 
 from metis.Sample import DBSSample
 from metis.CMSSWTask import CMSSWTask
@@ -13,9 +15,6 @@ from metis.StatsParser import StatsParser
 from metis.Utils import send_email, interruptible_sleep, cached, from_timestamp, good_sites
 from metis.LogParser import log_parser
 from pprint import pprint
-
-import scripts.dis_client as dis
-import urllib
 
 # NOTE xcache patterns are in
 # /cvmfs/cms.cern.ch/SITECONF/T2_US_UCSD/PhEDEx/storage.xml
@@ -25,37 +24,48 @@ import urllib
     # path-match="/+store/(mc/RunIIFall17MiniAODv2/[^/]+/MINIAODSIM/.*)"
     # path-match="/+store/(data/Run2017[A-Z]/[^/]+/MINIAOD/31Mar2018-.*)"
 
-def get_file_replicas_uncached(dsname, dasgoclient=False):
-    if os.getenv("USEDASGOCLIENT", False):
-        dasgoclient = True
-    if dasgoclient:
-        url = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas?dataset={}".format(dsname)
-        response = urllib.urlopen(url).read()
-        info = json.loads(response)["phedex"]["block"]
-    else:
-        rawresponse = dis.query(dsname, typ="sites", detail=True)
-        info = rawresponse["payload"]["block"]
-    file_replicas = {}
-    for block in info:
-        for fd in block["file"]:
-            filesizeGB = round(fd["bytes"]/(1.0e6),2)
-            fname = fd["name"]
-            nodes = []
-            for node in fd["replica"]:
-                name = str(node["node"])
-                if node.get("se",None) and "TAPE" in node["se"]: continue # no tape
-                if "_US_" not in name: continue # only US
-                if "FNAL" in name: # can't run directly at fnal, but purdue is basically next to fnal
-                    name = "T2_US_Purdue"
-                    # though if it's already at purdue anyway, no need to duplicate the node name
-                    if name in nodes: continue
-                nodes.append(name)
-            file_replicas[fname] = {
-                    "name": fname,
-                    "nodes": nodes,
-                    "filesizeGB": filesizeGB
-                    }
-    return file_replicas
+def get_file_replicas_uncached(dsname):
+    """
+    Get file replica info via the mcm-tools DAS API (site queries through Rucio/DAS).
+    Falls back to a simplified approach using DAS site queries.
+    """
+    try:
+        from das_api import DAS
+        das = DAS()
+        site_data = das.sites(dsname)
+        # DAS sites() returns site-level info, not per-file replicas.
+        # For per-file replica mapping, we use the DAS raw query interface.
+        raw = das.das_query("site file dataset={}".format(dsname))
+        file_replicas = {}
+        if raw and "data" in raw:
+            for entry in raw["data"]:
+                files = entry.get("file", [])
+                sites = entry.get("site", [])
+                for fd in files:
+                    fname = fd.get("name", "")
+                    filesizeGB = round(fd.get("size", 0) / 1.0e9, 2)
+                    nodes = []
+                    for site in sites:
+                        name = site.get("name", "")
+                        if "TAPE" in name.upper():
+                            continue
+                        if "_US_" not in name:
+                            continue
+                        if "FNAL" in name:
+                            name = "T2_US_Purdue"
+                            if name in nodes:
+                                continue
+                        nodes.append(name)
+                    if fname:
+                        file_replicas[fname] = {
+                            "name": fname,
+                            "nodes": nodes,
+                            "filesizeGB": filesizeGB,
+                        }
+        return file_replicas
+    except Exception as e:
+        print("[!] Failed to get file replicas for {}: {}".format(dsname, e))
+        return {}
 get_file_replicas = cached(default_max_age = datetime.timedelta(seconds=21*24*3600), filename="site_cache.shelf")(get_file_replicas_uncached)
     
 class Optimizer(object):
@@ -85,14 +95,14 @@ class Optimizer(object):
                 parsed = log_parser(logfname,do_header=True,do_error=False,do_rate=False)
                 site = parsed.get("site","")
                 if not site: continue
-                already_ran.update(site)
+                already_ran.add(site)
                 last_run_site = site[:]
                 if not site in times_run: times_run[site] = 1
                 times_run[site] += 1
             sites_per_file = []
             for infile in ins:
                 if infile.get_name() not in replica_info:
-                    print "[!] File {} for job {} not found on phedex".format(infile.get_name(),index)
+                    print("[!] File {} for job {} not found in replicas".format(infile.get_name(), index))
                 replica_sites = replica_info.get(infile.get_name(),{}).get("nodes",[])
                 sites_per_file.append(set(replica_sites))
             # the intersection of all sites per input file (i.e., sites where all inputs exist)
@@ -103,7 +113,7 @@ class Optimizer(object):
             had3failures = set([s for s,num in times_run.items() if num>=3])
 
             if len(cids) > 20:
-                print "[!] File {} for job {} has failed 20 times already at {}".format(out.get_name(),index,str(times_run))
+                print("[!] File {} for job {} has failed 20 times already at {}".format(out.get_name(), index, str(times_run)))
 
             # best list = pool of good sites where we 
             # - have not had at least 3 previous failures

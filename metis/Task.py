@@ -1,9 +1,9 @@
 import os
 import traceback
 import logging
-import cPickle as pickle
+import pickle
 
-from metis.Utils import setup_logger, do_cmd, metis_base
+from metis.Utils import setup_logger, do_cmd, do_cmd_safe, metis_base
 
 class Task(object):
 
@@ -50,7 +50,7 @@ class Task(object):
     def get_taskdir(self):
         task_dir = "{0}/tasks/{1}/".format(self.get_basedir(), self.unique_name)
         if not os.path.exists(task_dir):
-            do_cmd("mkdir -p {0}/logs/std_logs/".format(task_dir))
+            do_cmd_safe(["mkdir", "-p", "{}/logs/std_logs/".format(task_dir)])
         return os.path.normpath(task_dir)
 
     def get_metis_base(self):
@@ -80,7 +80,7 @@ class Task(object):
         Back up registered (in self.info_to_backup()) variables
         """
         fname = "{0}/backup.pkl".format(self.get_taskdir())
-        with open(fname, "w") as fhout:
+        with open(fname, "wb") as fhout:
             d = {}
             nvars = 0
             for tob in self.info_to_backup():
@@ -89,11 +89,28 @@ class Task(object):
                     nvars += 1
             pickle.dump(d, fhout)
             self.logger.debug("Backed up {0} variables to {1}".format(nvars, fname))
+        # Restrict file permissions to owner-only (defense against shared filesystem tampering)
+        try:
+            os.chmod(fname, 0o600)
+        except OSError:
+            pass
 
     def load(self):
         fname = "{0}/backup.pkl".format(self.get_taskdir())
         if os.path.exists(fname):
-            with open(fname, "r") as fhin:
+            # Safety check: warn if pickle file is writable by group/others
+            import stat
+            try:
+                perms = os.stat(fname).st_mode
+                if perms & (stat.S_IWGRP | stat.S_IWOTH):
+                    self.logger.warning(
+                        "Pickle file {} is writable by group/others! "
+                        "This is a security risk on shared filesystems. "
+                        "Run: chmod 600 {}".format(fname, fname)
+                    )
+            except OSError:
+                pass
+            with open(fname, "rb") as fhin:
                 data = pickle.load(fhin)
                 nvars = len(data.keys())
                 for key in data:

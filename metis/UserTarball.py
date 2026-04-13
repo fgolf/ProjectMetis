@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 """
     ShameFULLy stolen from
         https://github.com/dmwm/CRABClient/blob/master/src/python/CRABClient/JobType/UserTarball.py
@@ -9,7 +7,7 @@ import os
 import glob
 import tarfile
 import tempfile
-import commands
+import subprocess as commands
 from fnmatch import fnmatch
 
 class UserTarball(object):

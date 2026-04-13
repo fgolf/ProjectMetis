@@ -1,14 +1,8 @@
-from __future__ import print_function
-
 import math
-import time                                                
+import time
 import os
 import json
-try:
-    import commands
-except:
-    # python3 compatibility
-    import subprocess as commands
+import subprocess as commands
 try:
     import htcondor
     _ = htcondor.Schedd()
@@ -122,11 +116,31 @@ def locked_open(filename, mode='r'):
         # fcntl.flock(fd, fcntl.LOCK_UN)
 
 def do_cmd(cmd, returnStatus=False, dryRun=False):
+    """Execute a shell command string. Use do_cmd_safe() for simple file
+    operations to avoid shell injection risk with untrusted paths."""
     if dryRun:
         print("dry run: {}".format(cmd))
         status, out = 1, ""
     else:
         status, out = commands.getstatusoutput(cmd)
+    if returnStatus: return status, out
+    else: return out
+
+def do_cmd_safe(args, returnStatus=False, dryRun=False):
+    """Execute a command with shell=False (no injection risk).
+    Args should be a list, e.g. ["cp", src, dst]."""
+    if dryRun:
+        print("dry run: {}".format(args))
+        status, out = 1, ""
+    else:
+        import subprocess as sp
+        try:
+            result = sp.run(args, capture_output=True, text=True)
+            status = result.returncode
+            out = result.stdout + result.stderr
+        except Exception as e:
+            status = 1
+            out = str(e)
     if returnStatus: return status, out
     else: return out
 
@@ -165,7 +179,7 @@ def interruptible_sleep(n,reload_modules=[]):
         print("Sleeping for {}s.".format(n))
         time.sleep(n)
     except KeyboardInterrupt:
-        raw_input("Press Enter to force update, or Ctrl-C to quit.")
+        input("Press Enter to force update, or Ctrl-C to quit.")
         print("Force updating...")
         if reload_modules:
             print("Reloading {} modules: {}".format(
@@ -173,7 +187,8 @@ def interruptible_sleep(n,reload_modules=[]):
                         ", ".join(map(lambda x: x.__name__, reload_modules))
                         ))
             for mod in reload_modules:
-                reload(mod)
+                import importlib
+                importlib.reload(mod)
 
 class CustomFormatter(logging.Formatter): # pragma: no cover
     # stolen from
@@ -353,7 +368,7 @@ def condor_submit(**kwargs): # pragma: no cover
     if queue_multiple:
         if len(kwargs["arguments"]) and (type(kwargs["arguments"][0]) not in [tuple,list]):
             raise RuntimeError("If queueing multiple jobs in one cluster_id, arguments must be a list of lists")
-        params["arguments"] = map(lambda x: " ".join(map(str,x)), kwargs["arguments"])
+        params["arguments"] = list(map(lambda x: " ".join(map(str,x)), kwargs["arguments"]))
         params["extra"] = []
         if "selection_pairs" in kwargs:
             sps = kwargs["selection_pairs"]
@@ -550,7 +565,7 @@ def get_hist(vals, do_unicode=True, width=50): # pragma: no cover
     fillchar = "*"
     verticalbar = "|"
     if do_unicode:
-        fillchar = unichr(0x2588).encode('utf-8')
+        fillchar = chr(0x2588)
         verticalbar = "\x1b(0x\x1b(B"
     buff = ""
     for w in sorted(d, key=d.get, reverse=True):
@@ -580,12 +595,11 @@ def print_logo(animation=True): # pragma: no cover
       """
 
     d_symbols = {}
-    d_symbols["v"] = unichr(0x21E3).encode('utf-8')
-    d_symbols[">"] = unichr(0x21E2).encode('utf-8')
-    d_symbols["<"] = unichr(0x21E0).encode('utf-8')
-    d_symbols["o"] = unichr(0x25C9).encode('utf-8')
-    d_symbols["#"] = unichr(0x25A3).encode('utf-8')
-
+    d_symbols["v"] = chr(0x21E3)
+    d_symbols[">"] = chr(0x21E2)
+    d_symbols["<"] = chr(0x21E0)
+    d_symbols["o"] = chr(0x25C9)
+    d_symbols["#"] = chr(0x25A3)
     d_mapping = {}
     d_mapping["a"] = d_symbols["o"]
     d_mapping["b"] = d_symbols["v"]
