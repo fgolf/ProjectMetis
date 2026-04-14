@@ -114,15 +114,15 @@ class UtilsTest(unittest.TestCase):
         needed
         """
         basedir = "/tmp/{0}/metis/condor_test/".format(os.getenv("USER"))
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
         test_file = "{0}/super_secret_file_for_test.txt".format(basedir)
-        Utils.do_cmd("rm {0}".format(test_file))
+        Utils.do_cmd_safe(["rm", test_file])
         with open("{0}/temp_test_local.sh".format(basedir),"w") as fhout:
             fhout.write( """#!/usr/bin/env bash
                             echo "Metis"
                             touch {0}
                         """.format(test_file))
-        Utils.do_cmd("chmod a+x {0}/temp_test_local.sh".format(basedir))
+        Utils.do_cmd_safe(["chmod", "a+x", "{}/temp_test_local.sh".format(basedir)])
         success, cluster_id =  Utils.condor_submit(executable=basedir+"temp_test_local.sh", arguments=[], inputfiles=[], logdir=basedir, universe="local")
         found_it = False
         for t in [1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 5.0, 10.0]:
@@ -140,15 +140,15 @@ class UtilsTest(unittest.TestCase):
         a single submit file/cluster_id
         """
         basedir = "/tmp/{0}/metis/condor_test_multiple/".format(os.getenv("USER"))
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
         test_file = "{0}/super_secret_file_for_test.txt".format(basedir)
-        Utils.do_cmd("rm {0}".format(test_file))
+        Utils.do_cmd_safe(["rm", test_file])
         with open("{0}/temp_test_local.sh".format(basedir),"w") as fhout:
             fhout.write( """#!/usr/bin/env bash
                             echo "Metis"
                             touch {0}
                         """.format(test_file))
-        Utils.do_cmd("chmod a+x {0}/temp_test_local.sh".format(basedir))
+        Utils.do_cmd_safe(["chmod", "a+x", "{}/temp_test_local.sh".format(basedir)])
         success, cluster_id =  Utils.condor_submit(
                 executable=basedir+"temp_test_local.sh",
                 arguments=[[1,2],[3,4]],
@@ -165,7 +165,7 @@ class UtilsTest(unittest.TestCase):
     @unittest.skipIf("uaf-" not in os.uname()[1], "Condor only testable on UAF")
     def test_condor_submission_and_status(self):
         basedir = "/tmp/{0}/metis/condor_test/".format(os.getenv("USER"))
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
 
         with open("{0}/temp_test.sh".format(basedir),"w") as fhout:
             fhout.write( """#!/usr/bin/env bash
@@ -191,8 +191,8 @@ kill %1 # kill dstat
 echo "ls -l output"
 ls -l
                         """)
-        Utils.do_cmd("chmod a+x {0}/temp_test.sh".format(basedir))
-            
+        Utils.do_cmd_safe(["chmod", "a+x", "{}/temp_test.sh".format(basedir)])
+
         success, cluster_id =  Utils.condor_submit(
             executable=basedir+"temp_test.sh", arguments=["cat",10,"foo"], inputfiles=[], logdir=basedir,
             selection_pairs=[["MyVar1","METIS_TEST"],["MyVar2","METIS_TEST2"]]

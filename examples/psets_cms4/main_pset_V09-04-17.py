@@ -21,14 +21,14 @@ opts.parseArguments()
 # if it's MC, it's obviously not prompt
 if opts.fastsim: opts.data = False
 if not opts.data: opts.prompt = False
-print """PSet is assuming:
+print("""PSet is assuming:
    data? {}
    prompt? {}
    fastsim? {}
    relval? {}
    triginfo? {}
    name = {}
-""".format(bool(opts.data), bool(opts.prompt), bool(opts.fastsim), bool(opts.relval), bool(opts.triginfo), str(opts.name))
+""".format(bool(opts.data), bool(opts.prompt), bool(opts.fastsim), bool(opts.relval), bool(opts.triginfo), str(opts.name)))
 
 import CMS3.NtupleMaker.configProcessName as configProcessName
 configProcessName.name="PAT"

@@ -60,14 +60,14 @@ class FileTest(unittest.TestCase):
         # make a test file
         basedir = "/tmp/{0}/metis/file_test/".format(os.getenv("USER"))
         fname = "{0}/test.txt".format(basedir)
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
-        Utils.do_cmd("touch {0}".format(fname))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
+        Utils.do_cmd_safe(["touch", fname])
         f = File(fname)
 
         # it exists
         self.assertEqual(f.exists(), True)
         # delete it
-        Utils.do_cmd("rm {0}".format(fname))
+        Utils.do_cmd_safe(["rm", fname])
         # it still exists due to caching (to avoid unnecessary `ls`)
         self.assertEqual(f.exists(), True)
         # force recheck/recache

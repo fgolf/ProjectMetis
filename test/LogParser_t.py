@@ -19,7 +19,7 @@ class LogParserTest(unittest.TestCase):
         basedir = "/tmp/{0}/metis/log_test/".format(os.getenv("USER"))
         cls.outlog = "{0}/test.out".format(basedir)
         cls.errlog = "{0}/test.err".format(basedir)
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
 
         with open(cls.outlog,"w") as fhout:
             fhout.write("""

@@ -10,7 +10,7 @@ class UserTarballTest(unittest.TestCase):
         tarname = "{0}/test.tar.gz".format(basedir)
         textname = "{0}/test.txt".format(basedir)
 
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
 
         ut = UserTarball.UserTarball(name=tarname)
         Utils.do_cmd("echo check > {0}".format(textname))

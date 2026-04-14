@@ -79,7 +79,7 @@ def main(args):
                 print("\033[93mAdditionally, timestamps will be dropped if before {0} days ago\033[0m".format(drop_before_days))
     else:
 
-        minimum_timestamp = int((datetime.datetime.now() - datetime.timedelta(days=drop_before_days)).strftime("%s"))
+        minimum_timestamp = int((datetime.datetime.now() - datetime.timedelta(days=drop_before_days)).timestamp())
 
         ndropped = 0
         new_tasks = []

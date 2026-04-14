@@ -24,9 +24,9 @@ class CondorTaskTest(unittest.TestCase):
 
         # make a test directory and touch some root files and executable there
         basedir = "/tmp/{0}/metis/condortask_test/".format(os.getenv("USER"))
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
         for i in range(1,cls.nfiles+1):
-            Utils.do_cmd("touch {0}/input_{1}.root".format(basedir, i))
+            Utils.do_cmd_safe(["touch", "{}/input_{}.root".format(basedir, i)])
         Utils.do_cmd("echo hello > {0}/executable.sh".format(basedir))
 
         # make dummy CondorTask with the files we
@@ -111,10 +111,10 @@ class CondorTaskTest(unittest.TestCase):
 
     def test_flush(self):
         basedir = "/tmp/{0}/metis/condortask_testflush/".format(os.getenv("USER"))
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
         tag = "vflush"
         for i in range(1,self.nfiles+1):
-            Utils.do_cmd("touch {0}/input_{1}.root".format(basedir, i))
+            Utils.do_cmd_safe(["touch", "{}/input_{}.root".format(basedir, i)])
 
         dummy = CondorTask(
                 sample = DirectorySample(

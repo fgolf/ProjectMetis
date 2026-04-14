@@ -22,7 +22,7 @@ class CombinerTask(Task):
         super(self.__class__, self).__init__(**kwargs)
 
     def add_inputs(self, inputs, flush=False):
-        if not type(inputs) == list:
+        if not isinstance(inputs, list):
             raise ValueError("inputs must be a list")
         for inp in inputs:
             if inp not in self.inputs:

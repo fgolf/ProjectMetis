@@ -13,9 +13,9 @@ class CMSSWTaskTest(unittest.TestCase):
     def setUpClass(cls):
         logging.getLogger("logger_metis").disabled = True
         cls.basedir = "/tmp/{0}/metis/cmsswtest/".format(os.getenv("USER"))
-        Utils.do_cmd("mkdir -p {0}".format(cls.basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", cls.basedir])
         for i in range(1, 3):
-            Utils.do_cmd("touch {0}/input_{1}.root".format(cls.basedir, i))
+            Utils.do_cmd_safe(["touch", "{}/input_{}.root".format(cls.basedir, i)])
 
     def _make_task(self, **extra):
         defaults = dict(

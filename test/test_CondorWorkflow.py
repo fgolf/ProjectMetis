@@ -27,10 +27,10 @@ class CondorWorkflowTest(unittest.TestCase):
         njobs = 2
         cmssw =  "CMSSW_8_0_21"
         basedir = "/tmp/{0}/metis/condortask_testfull/".format(os.getenv("USER"))
-        Utils.do_cmd("mkdir -p {0}".format(basedir))
+        Utils.do_cmd_safe(["mkdir", "-p", basedir])
         tag = "vfull"
         for i in range(1,njobs+1):
-            Utils.do_cmd("touch {0}/input_{1}.root".format(basedir, i))
+            Utils.do_cmd_safe(["touch", "{}/input_{}.root".format(basedir, i)])
 
         logging.getLogger("logger_metis").disabled = False
         dummy = CondorTask(
