@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import json
 import argparse
@@ -29,13 +29,8 @@ def progress_bar(fraction, width=40, do_color=True, do_unicode=True,override_col
     filled = "#"*nfilled
     unfilled = "-"*(width-nfilled)
     if do_unicode:
-        filled = unichr(0x2588).encode('utf-8') * nfilled
-        unfilled = unichr(0x2594+24).encode('utf-8')*(width-nfilled)
-        # unfilled = unichr(0x2594).encode('utf-8')*(width-nfilled)
-        # nleftover_eighths = int((fraction*width-nfilled)*8)
-        # if nleftover_eighths > 0:
-        #     if nleftover_eighths == 4: nleftover_eighths += 1
-        #     filled = filled[:-1]+unichr(0x2590-nleftover_eighths).encode('utf-8')
+        filled = chr(0x2588) * nfilled
+        unfilled = chr(0x2594+24)*(width-nfilled)
 
     if do_color:
         if override_color:
@@ -95,13 +90,13 @@ def main(args):
 
     dt = from_timestamp(data["last_updated"])
     if do_color and not do_unicode:
-        print "\033[93mSummary as of {0}\033[0m".format(dt.strftime("%a %b %d %T %Y"))
+        print("\033[93mSummary as of {0}\033[0m".format(dt.strftime("%a %b %d %T %Y")))
     else:
-        print "Summary as of {0}".format(dt.strftime("%a %b %d %T %Y"))
+        print("Summary as of {0}".format(dt.strftime("%a %b %d %T %Y")))
 
     tasks = data["tasks"]
     if pattern:
-        tasks = filter(lambda t: fnmatch(t["general"]["dataset"], pattern), tasks)
+        tasks = [t for t in tasks if fnmatch(t["general"]["dataset"], pattern)]
 
 
     dswidth = width if width > 0 else max(len(x["general"]["dataset"]) for x in tasks)
@@ -125,7 +120,8 @@ def main(args):
         if done == total:
             ending = " [DONE]"
         tag_short = "[{}]".format(tag[:15])
-        print ("{:<17s} {} {:3.0f}%% [{:4d}/{:4d}] {:<%is}{}" % dswidth).format(tag_short, progress, 100.0*fraction, done, total, dataset_short, ending)
+        fmt = "{{:<17s}} {{}} {{:3.0f}}%% [{{:4d}}/{{:4d}}] {{:<{w}s}}{{}}".format(w=dswidth)
+        print(fmt.format(tag_short, progress, 100.0*fraction, done, total, dataset_short, ending))
 
         if verbosity > 0:
             for iout,info in d_bad["jobs_not_done"].items():
@@ -150,31 +146,32 @@ def main(args):
                     except:
                         pass
 
-                print "\toutput {}: {}{} retries{}{}, {}".format(iout, red_open, nretries, duration_str, color_close, last_log)
+                print("\toutput {}: {}{} retries{}{}, {}".format(iout, red_open, nretries, duration_str, color_close, last_log))
                 if verbosity > 1:
                     if os.path.exists(last_log):
                         with open(last_log,"r") as fhlog:
-                            print "\t\t __________ LAST {} LINES >>>>>> __________".format(nlines)
+                            print("\t\t __________ LAST {} LINES >>>>>> __________".format(nlines))
                             for line in fhlog.readlines()[-nlines:]:
-                                print "\t\t{}".format(line.replace("\n",""))
-                            print "\t\t __________ LAST {} LINES <<<<<< __________".format(nlines)
+                                print("\t\t{}".format(line.replace("\n","")))
+                            print("\t\t __________ LAST {} LINES <<<<<< __________".format(nlines))
 
                 if verbosity > 2:
                     if os.path.exists(info["last_log"]):
                         with open(info["last_log"]) as fhlog:
-                            print "\t\t __________ FIRST {} LINES >>>>>> __________".format(nlines)
+                            print("\t\t __________ FIRST {} LINES >>>>>> __________".format(nlines))
                             for line in fhlog.readlines()[:nlines]:
-                                print "\t\t{}".format(line.replace("\n",""))
-                            print "\t\t __________ FIRST {} LINES <<<<<< __________".format(nlines)
+                                print("\t\t{}".format(line.replace("\n","")))
+                            print("\t\t __________ FIRST {} LINES <<<<<< __________".format(nlines))
 
     if show_total:
         done,total,fraction = map(sum,zip(*[get_progress(t["general"]) for t in tasks]))
         fraction = 1.0*done/total
         progress =  progress_bar(fraction, do_color=do_color, do_unicode=do_unicode)
-        print ("{0:<%is} {1} {2:3.0f}%% [{3}/{4}]{5}" % dswidth).format(
+        fmt = "{{0:<{w}s}} {{1}} {{2:3.0f}}%% [{{3}}/{{4}}]{{5}}".format(w=dswidth)
+        print(fmt.format(
                 "-"*15+" TOTAL "+"-"*15,
                 progress, 100.0*fraction, done, total, ""
-                )
+                ))
 
 
 if __name__ == "__main__":

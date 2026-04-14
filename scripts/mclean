@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import json
 import argparse
@@ -10,9 +10,9 @@ from metis.Utils import hsv_to_rgb, from_timestamp, timedelta_to_human
 
 """
 Multiple scripts using metis to submit jobs will write to the same
-summary JSON files, appending new tasks to prevent any kind of 
+summary JSON files, appending new tasks to prevent any kind of
 clobbering. This can become a pain when looking at the dashboard
-(or using msummary) which will show old/irrelevant tasks. 
+(or using msummary) which will show old/irrelevant tasks.
 
 This script lets you clean up the jsons. Ex.,
 $ mclean MINIAODSIM
@@ -22,7 +22,7 @@ to get rid of those.
 
 If you like to see the njob vs time plot on the dashboard, you'll eventually
 want to trim the timestamps so you're not staring at a plot going back months
-with no ability to see trends in the past few days. 
+with no ability to see trends in the past few days.
 
 You can do
 $ mclean nomatch -d 15
@@ -70,13 +70,13 @@ def main(args):
 
 
     if not do_rm:
-        print "\033[93mFound {0} matching tasks\033[0m".format(len(matching_dsnames))
+        print("\033[93mFound {0} matching tasks\033[0m".format(len(matching_dsnames)))
         for dsname in sorted(matching_dsnames):
-            print "\t{0}".format(dsname)
+            print("\t{0}".format(dsname))
         if len(matching_dsnames):
-            print "\033[93mTo prune them from monitoring only, re-run same command with \033[38;2;250;50;50m--rm\033[0m".format(len(matching_dsnames))
+            print("\033[93mTo prune them from monitoring only, re-run same command with \033[38;2;250;50;50m--rm\033[0m".format(len(matching_dsnames)))
             if drop_before_days > 0:
-                print "\033[93mAdditionally, timestamps will be dropped if before {0} days ago\033[0m".format(drop_before_days)
+                print("\033[93mAdditionally, timestamps will be dropped if before {0} days ago\033[0m".format(drop_before_days))
     else:
 
         minimum_timestamp = int((datetime.datetime.now() - datetime.timedelta(days=drop_before_days)).strftime("%s"))
@@ -113,7 +113,7 @@ def main(args):
         with open(totalpath,"w") as fhout:
             json.dump(data_raw, fhout)
 
-        print "\033[38;2;250;50;50mRemoved {0} matching tasks\033[0m".format(ndropped)
+        print("\033[38;2;250;50;50mRemoved {0} matching tasks\033[0m".format(ndropped))
 
 if __name__ == "__main__":
 
@@ -125,4 +125,3 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--tag", help="consider pattern for a particular tag", default="", type=str)
     args = parser.parse_args()
     main(args)
-

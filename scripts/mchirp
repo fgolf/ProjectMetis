@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import pandas as pd
 import json
@@ -57,4 +57,4 @@ with open("chirpdata.js","w") as fh:
 do_cmd("mkdir -p ~/public_html/dump/", dryRun=False)
 do_cmd("cp -rp {}/dashboard/chirptable.html ~/public_html/dump/".format(metis_base()), dryRun=False)
 do_cmd("cp -rp chirpdata.js ~/public_html/dump/", dryRun=False)
-print "http://uaf-1.t2.ucsd.edu/~{}/dump/chirptable.html".format(os.getenv("USER"))
+print("http://uaf-1.t2.ucsd.edu/~{}/dump/chirptable.html".format(os.getenv("USER")))

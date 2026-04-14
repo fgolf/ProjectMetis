@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import glob
 import pickle
@@ -23,8 +23,8 @@ def print_analysis(args):
     for todelete in ["args", "uname -a"]:
         if todelete in arg_info: del arg_info[todelete]
 
-    print BLUE+"Arguments"+ENDC
-    print "\n".join(map(lambda x: "\t{0}: {1}".format(*x), arg_info.items()))
+    print(BLUE+"Arguments"+ENDC)
+    print("\n".join(map(lambda x: "\t{0}: {1}".format(*x), arg_info.items())))
 
 
     out_log_str = open(logname.replace(".out",".out"),"r").read()
@@ -32,16 +32,16 @@ def print_analysis(args):
 
 
     if "Begin Fatal Exception" in err_log_str:
-        print 
-        print BLUE+"CMSSW Exception"+ENDC
+        print()
+        print(BLUE+"CMSSW Exception"+ENDC)
         between = err_log_str.split("Begin Fatal")[-1].split("End Fatal")[0]
-        print "\t"+"\n\t".join(between.splitlines()[1:-1])
+        print("\t"+"\n\t".join(between.splitlines()[1:-1]))
 
-    store_matches = re.findall("/store/[A-Za-z0-9\-\_\/]+\.root",err_log_str)
+    store_matches = re.findall(r"/store/[A-Za-z0-9\-\_\/]+\.root",err_log_str)
     if store_matches:
-        print
-        print BLUE+"Last file"+ENDC
-        print "\t"+RED+store_matches[-1]+ENDC
+        print()
+        print(BLUE+"Last file"+ENDC)
+        print("\t"+RED+store_matches[-1]+ENDC)
 
 def try_to_get_history(args):
     fname = os.path.normpath(args.logfile)
@@ -49,15 +49,15 @@ def try_to_get_history(args):
     taskpatt = "*Task_{}".format([x for x in fname.split("/") if ("AOD" in x or "Task" in x)][0])
     taskdir = glob.glob("tasks/{}".format(taskpatt))[0]
     ef = EventsFile(fname)
-    with open("{}/backup.pkl".format(taskdir),"r") as fh:
+    with open("{}/backup.pkl".format(taskdir),"rb") as fh:
         data = pickle.load(fh)
         jobids = data["job_submission_history"][ef.get_index()]
     logfnames = []
     for jid in jobids:
         logfnames.append(os.path.abspath(taskdir) + "/logs/std_logs/1e.{}.out".format(jid))
-    print logfnames
-    print "Found {} old logs:\n{}".format(len(logfnames),"\t"+"\n\t".join(logfnames))
-    print "Analyzing last one"
+    print(logfnames)
+    print("Found {} old logs:\n{}".format(len(logfnames),"\t"+"\n\t".join(logfnames)))
+    print("Analyzing last one")
     args.logfile = logfnames[-1]
 if __name__ == "__main__":
     # logname = "1e.1218912.0.out"

@@ -59,7 +59,7 @@ class CondorWorkflowTest(unittest.TestCase):
             is_complete = dummy.complete()
             if is_complete: break
 
-        self.assertEquals(is_complete, True)
+        self.assertEqual(is_complete, True)
         self.assertEqual(njobs, len(glob.glob(dummy.get_outputdir()+"/*")))
 
 if __name__ == "__main__":

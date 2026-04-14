@@ -66,20 +66,23 @@ class cached(object): # pragma: no cover
     def __call__(self, func):
         def inner(*args, **kwargs):
             lockfd = open(self.cache_file + ".lock", "a")
-            self.cached_function_responses = shelve.open(self.cache_file)
-            fcntl.flock(lockfd, fcntl.LOCK_EX)
-            max_age = kwargs.get('max_age', self.default_max_age)
-            if isinstance(max_age, (int, float)):
-                max_age = datetime.timedelta(seconds=max_age)
-            funcname = func.__name__
-            key = "|".join([str(funcname), str(args), str(kwargs)])
-            if not max_age or key not in self.cached_function_responses or (datetime.datetime.now() - self.cached_function_responses[key]['fetch_time'] > max_age):
-                if 'max_age' in kwargs: del kwargs['max_age']
-                res = func(*args, **kwargs)
-                self.cached_function_responses[key] = {'data': res, 'fetch_time': datetime.datetime.now()}
-            to_ret = self.cached_function_responses[key]['data']
-            self.cached_function_responses.close()
-            fcntl.flock(lockfd, fcntl.LOCK_UN)
+            try:
+                self.cached_function_responses = shelve.open(self.cache_file)
+                fcntl.flock(lockfd, fcntl.LOCK_EX)
+                max_age = kwargs.get('max_age', self.default_max_age)
+                if isinstance(max_age, (int, float)):
+                    max_age = datetime.timedelta(seconds=max_age)
+                funcname = func.__name__
+                key = "|".join([str(funcname), str(args), str(kwargs)])
+                if not max_age or key not in self.cached_function_responses or (datetime.datetime.now() - self.cached_function_responses[key]['fetch_time'] > max_age):
+                    if 'max_age' in kwargs: del kwargs['max_age']
+                    res = func(*args, **kwargs)
+                    self.cached_function_responses[key] = {'data': res, 'fetch_time': datetime.datetime.now()}
+                to_ret = self.cached_function_responses[key]['data']
+            finally:
+                self.cached_function_responses.close()
+                fcntl.flock(lockfd, fcntl.LOCK_UN)
+                lockfd.close()
             return to_ret
         return inner
 
@@ -588,11 +591,11 @@ def nlines_back(n):
 
 def print_logo(animation=True): # pragma: no cover
 
-    main_template = """
+    main_template = r"""
           a          __  ___      / \    @
           b         /  |/  / ___  | |_   _   ___
       f d c e g    / /|_/ / / _ \ | __| | | / __|
-      h   i   j   / /  / / |  __/ | |_  | | \__ \\
+      h   i   j   / /  / / |  __/ | |_  | | \__ \
       k   l   m  /_/  /_/   \___|  \__| |_| |___/
       """
 

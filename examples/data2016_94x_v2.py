@@ -58,7 +58,7 @@ if __name__ == "__main__":
                     task.process()
             except:
                 traceback_string = traceback.format_exc()
-                print "Runtime error:\n{0}".format(traceback_string)
+                print("Runtime error:\n{0}".format(traceback_string))
                 send_email(subject="metis error", body=traceback_string)
             total_summary[dsname] = task.get_task_summary()
         StatsParser(data=total_summary, webdir="~/public_html/dump/metis/", make_plots=False).do()

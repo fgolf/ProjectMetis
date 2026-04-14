@@ -165,7 +165,7 @@ def test():  # pragma: no cover
     clear = "\033[0m"
 
     try:
-        columns = int(os.popen("stty size", "r").read().split()[1]) - 20
+        columns = int(os.get_terminal_size().columns) - 20
     except Exception:
         columns = 80
 

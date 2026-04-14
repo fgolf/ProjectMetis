@@ -4,7 +4,7 @@ import os
 import sys
 import multiprocessing
 import logging
-import httplib
+import http.client
 import datetime
 
 from metis.Utils import do_cmd, get_proxy_file, setup_logger, cached
@@ -174,7 +174,7 @@ class CrabManager(object):
             out = {}
             try:
                 out = crabCommand('status', dir=thedir, long=False, proxy=get_proxy_file())
-            except httplib.HTTPException as e:
+            except http.client.HTTPException as e:
                 self.logger.warning("got an http exception from crab status, will use cached status_output")
                 self.logger.warning(str(e))
                 out = self.status_output.copy()
@@ -194,7 +194,7 @@ class CrabManager(object):
             else:
                 out = crabCommand('resubmit', dir=self.task_dir, proxy=get_proxy_file())
             return out["status"] == "SUCCESS"
-        except httplib.HTTPException as e:
+        except http.client.HTTPException as e:
             self.logger.warning("got an http exception from crab resubmit")
             self.logger.warning(str(e))
             out = self.status_output.copy()

@@ -81,7 +81,7 @@ class StatsParser(object):
                             site,
                         ])
 
-        print np.array(arr)
+        print(np.array(arr))
         arr = np.rec.fromarrays(np.array(arr).T, 
                 dtype=zip(('ts', 'fail', 'retries', 'retry', 'rate', 'site'), (np.int, np.int, np.int, np.int, np.float, '|S15'))
                 )
@@ -97,12 +97,12 @@ if __name__ == "__main__":
     mpl.use('Agg')
     import matplotlib.pyplot as plt
 
-    print data
-    print data.shape
+    print(data)
+    print(data.shape)
 
     usites = np.unique(data["site"])
     for site in usites:
-        print "{} -> {} entries".format(site, (data["site"] == site).sum())
+        print("{} -> {} entries".format(site, (data["site"] == site).sum()))
 
     ts_first = data["ts"].min() - 1
     ts_last = data["ts"].max() + 1

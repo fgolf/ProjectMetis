@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import argparse
@@ -22,19 +22,19 @@ def make(output, cmssw_base=None, skip_root=False, exclude_patterns=None, extra_
             "xz_level": xz_level,
             }
 
-    print "[mtarfile] Making tarfile"
+    print("[mtarfile] Making tarfile")
     if not use_xz_algo:
-        print "[mtarfile] Hey, uh, so I saw you're not using the --xz flag. I " \
-                "recommend using it to switch to the xz algorithm when tarring. By default, " \
-                "it can shrink the file size by ~20-30% for no extra cost in time. If you " \
-                "plan to submit many jobs, please additionally use --xz_level 9 and wait a " \
-                "couple of minutes for another ~5-10%."
+        print("[mtarfile] Hey, uh, so I saw you're not using the --xz flag. I "
+                "recommend using it to switch to the xz algorithm when tarring. By default, "
+                "it can shrink the file size by ~20-30% for no extra cost in time. If you "
+                "plan to submit many jobs, please additionally use --xz_level 9 and wait a "
+                "couple of minutes for another ~5-10%.")
     if skip_root:
-        print "[mtarfile] Skipping root files"
+        print("[mtarfile] Skipping root files")
     if exclude_patterns:
-        print "[mtarfile] Skipping paths/files matching any of {}".format(exclude_patterns)
+        print("[mtarfile] Skipping paths/files matching any of {}".format(exclude_patterns))
     make_tarball(output, **extra)
-    print "[mtarfile] Made {0:.1f}MB tarfile: {1}".format(1.e-6*os.path.getsize(output), output)
+    print("[mtarfile] Made {0:.1f}MB tarfile: {1}".format(1.e-6*os.path.getsize(output), output))
 
     return True
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import re
 import os
@@ -201,7 +201,7 @@ def make_documentation(args):
     webfile = os.path.expanduser("~/public_html/doc.html")
     relpath = webfile.split("public_html/")[1]
     url = "http://{0}/~{1}/{2}".format(os.uname()[1],os.getenv("USER"),relpath)
-    print "Copied documentation to {0}".format(url)
+    print("Copied documentation to {0}".format(url))
 
     with open(webfile,"w") as fhout:
         fhout.write(doc)
