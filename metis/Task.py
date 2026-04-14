@@ -98,16 +98,15 @@ class Task(object):
     def load(self):
         fname = "{0}/backup.pkl".format(self.get_taskdir())
         if os.path.exists(fname):
-            # Safety check: warn if pickle file is writable by group/others
+            # Safety check: fix pickle file if writable by group/others
             import stat
             try:
                 perms = os.stat(fname).st_mode
                 if perms & (stat.S_IWGRP | stat.S_IWOTH):
                     self.logger.warning(
-                        "Pickle file {} is writable by group/others! "
-                        "This is a security risk on shared filesystems. "
-                        "Run: chmod 600 {}".format(fname, fname)
+                        "Pickle file {} has loose permissions, fixing to 600".format(fname)
                     )
+                    os.chmod(fname, 0o600)
             except OSError:
                 pass
             with open(fname, "rb") as fhin:
