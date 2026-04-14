@@ -1,4 +1,5 @@
 import math
+import re
 import time
 import os
 import json
@@ -266,19 +267,25 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=[]
     columns_str = " ".join(columns)
     selection_str = ""
     selection_strs_cpp = []
+    _safe_re = re.compile(r'^[A-Za-z0-9_.\-/]+$')
     if selection_pairs:
         for sel_pair in selection_pairs:
             if len(sel_pair) != 2:
                 raise RuntimeError("This selection pair is not a 2-tuple: {0}".format(str(sel_pair)))
-            selection_str += " -const '{0}==\"{1}\"'".format(*sel_pair)
+            key, val = sel_pair
+            if not _safe_re.match(str(key)) or not _safe_re.match(str(val)):
+                raise RuntimeError("Selection pair contains unsafe characters: {0}".format(str(sel_pair)))
+            selection_str += " -const '{0}==\"{1}\"'".format(key, val)
             if use_python_bindings:
-                selection_strs_cpp.append('({0}=="{1}")'.format(*sel_pair))
+                selection_strs_cpp.append('({0}=="{1}")'.format(key, val))
     if extra_constraint and use_python_bindings:
         selection_strs_cpp.append(extra_constraint)
 
     # Constraint ignores removed jobs ("X")
     extra_cli = ""
     if schedd:
+        if not _safe_re.match(str(schedd)):
+            raise RuntimeError("Schedd name contains unsafe characters: {0}".format(schedd))
         extra_cli += " -name {} ".format(schedd)
 
     jobs = []
