@@ -1,9 +1,43 @@
 import os
+import json
 import traceback
 import logging
 import pickle
 
 from metis.Utils import setup_logger, do_cmd, do_cmd_safe, metis_base
+
+class _MetisEncoder(json.JSONEncoder):
+    """JSON encoder that handles File/EventsFile objects."""
+    def default(self, obj):
+        from metis.File import File, EventsFile, FileDBS
+        if isinstance(obj, FileDBS):
+            return {"__metis_class__": "FileDBS", "name": obj.name,
+                    "nevents": obj.nevents, "nevents_negative": obj.nevents_negative,
+                    "filesizeGB": getattr(obj, "filesizeGB", 0.0),
+                    "status": obj.status, "fake": obj.fake}
+        elif isinstance(obj, EventsFile):
+            return {"__metis_class__": "EventsFile", "name": obj.name,
+                    "nevents": obj.nevents, "nevents_negative": obj.nevents_negative,
+                    "status": obj.status, "fake": obj.fake}
+        elif isinstance(obj, File):
+            return {"__metis_class__": "File", "name": obj.name,
+                    "status": obj.status, "fake": obj.fake}
+        return super().default(obj)
+
+def _metis_decoder(obj):
+    """JSON object hook that reconstructs File/EventsFile objects."""
+    if "__metis_class__" in obj:
+        from metis.File import File, EventsFile, FileDBS
+        cls_name = obj.pop("__metis_class__")
+        name = obj.pop("name")
+        if cls_name == "FileDBS":
+            return FileDBS(name, **obj)
+        elif cls_name == "EventsFile":
+            return EventsFile(name, **obj)
+        elif cls_name == "File":
+            return File(name, **obj)
+    return obj
+
 
 class Task(object):
 
@@ -71,50 +105,83 @@ class Task(object):
     def info_to_backup(self):
         """
         Up to subclasses to overload this and declare what
-        attributes to backup and load from pickle file
+        attributes to backup and load from backup file
         """
         return []
 
     def backup(self):
         """
-        Back up registered (in self.info_to_backup()) variables
+        Back up registered (in self.info_to_backup()) variables to JSON.
         """
-        fname = "{0}/backup.pkl".format(self.get_taskdir())
-        with open(fname, "wb") as fhout:
-            d = {}
-            nvars = 0
-            for tob in self.info_to_backup():
-                if hasattr(self, tob):
-                    d[tob] = getattr(self, tob)
-                    nvars += 1
-            pickle.dump(d, fhout)
-            self.logger.debug("Backed up {0} variables to {1}".format(nvars, fname))
-        # Restrict file permissions to owner-only (defense against shared filesystem tampering)
+        taskdir = self.get_taskdir()
+        fname_json = "{0}/backup.json".format(taskdir)
+        d = {}
+        nvars = 0
+        for tob in self.info_to_backup():
+            if hasattr(self, tob):
+                d[tob] = getattr(self, tob)
+                nvars += 1
+        with open(fname_json, "w") as fhout:
+            json.dump(d, fhout, cls=_MetisEncoder, indent=1)
+            self.logger.debug("Backed up {0} variables to {1}".format(nvars, fname_json))
         try:
-            os.chmod(fname, 0o600)
+            os.chmod(fname_json, 0o600)
         except OSError:
             pass
-
-    def load(self):
-        fname = "{0}/backup.pkl".format(self.get_taskdir())
-        if os.path.exists(fname):
-            # Safety check: fix pickle file if writable by group/others
-            import stat
+        # Remove legacy pickle file if it exists
+        fname_pkl = "{0}/backup.pkl".format(taskdir)
+        if os.path.exists(fname_pkl):
             try:
-                perms = os.stat(fname).st_mode
-                if perms & (stat.S_IWGRP | stat.S_IWOTH):
-                    self.logger.warning(
-                        "Pickle file {} has loose permissions, fixing to 600".format(fname)
-                    )
-                    os.chmod(fname, 0o600)
+                os.remove(fname_pkl)
             except OSError:
                 pass
-            with open(fname, "rb") as fhin:
-                data = pickle.load(fhin)
-                nvars = len(data.keys())
-                for key in data:
-                    setattr(self, key, data[key])
-                self.logger.debug("Loaded backup with {0} variables from {1}".format(nvars, fname))
+
+    def load(self):
+        taskdir = self.get_taskdir()
+        fname_json = "{0}/backup.json".format(taskdir)
+        fname_pkl = "{0}/backup.pkl".format(taskdir)
+
+        if os.path.exists(fname_json):
+            self._load_json(fname_json)
+        elif os.path.exists(fname_pkl):
+            self._load_pickle(fname_pkl)
+
+    def _load_json(self, fname):
+        import stat
+        try:
+            perms = os.stat(fname).st_mode
+            if perms & (stat.S_IWGRP | stat.S_IWOTH):
+                self.logger.warning(
+                    "Backup file {} has loose permissions, fixing to 600".format(fname)
+                )
+                os.chmod(fname, 0o600)
+        except OSError:
+            pass
+        with open(fname, "r") as fhin:
+            data = json.load(fhin, object_hook=_metis_decoder)
+            nvars = len(data.keys())
+            for key in data:
+                setattr(self, key, data[key])
+            self.logger.debug("Loaded backup with {0} variables from {1}".format(nvars, fname))
+
+    def _load_pickle(self, fname):
+        """Load legacy pickle backup and migrate to JSON on next backup()."""
+        import stat
+        try:
+            perms = os.stat(fname).st_mode
+            if perms & (stat.S_IWGRP | stat.S_IWOTH):
+                self.logger.warning(
+                    "Pickle file {} has loose permissions, fixing to 600".format(fname)
+                )
+                os.chmod(fname, 0o600)
+        except OSError:
+            pass
+        with open(fname, "rb") as fhin:
+            data = pickle.load(fhin)
+            nvars = len(data.keys())
+            for key in data:
+                setattr(self, key, data[key])
+            self.logger.debug("Loaded legacy pickle backup with {0} variables from {1}".format(nvars, fname))
 
 
     def initialized(self):

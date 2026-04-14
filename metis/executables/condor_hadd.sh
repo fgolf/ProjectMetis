@@ -8,7 +8,7 @@ CMSSWVERSION=$5
 SCRAMARCH=$6
 
 # Make sure OUTPUTNAME doesn't have .root since we add it manually
-OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
+OUTPUTNAME=$(echo "$OUTPUTNAME" | sed 's/\.root//')
 
 echo -e "\n--- begin header output ---\n" #                     <----- section division
 echo "OUTPUTDIR: $OUTPUTDIR"
@@ -29,9 +29,9 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 export SCRAM_ARCH=${SCRAMARCH}
 
-eval `scramv1 project CMSSW $CMSSWVERSION`
-cd $CMSSWVERSION
-eval `scramv1 runtime -sh`
+eval $(scramv1 project CMSSW $CMSSWVERSION)
+cd "$CMSSWVERSION"
+eval $(scramv1 runtime -sh)
 [ -e ../package.tar.gz ] && { 
     mv ../package.tar.gz package.tar.gz;
     tar xf package.tar.gz;
@@ -56,7 +56,7 @@ ls -lrth
 
 echo -e "\n--- begin copying output ---\n" #                    <----- section division
 echo "Sending output file $OUTPUTNAME.root"
-gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTNAME}.root gsiftp://gftp.t2.ucsd.edu${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+gfal-copy -p -f -t 4200 --verbose file://$(pwd)/${OUTPUTNAME}.root gsiftp://gftp.t2.ucsd.edu${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
 echo -e "\n--- end copying output ---\n" #                      <----- section division
 
 echo -e "\n--- begin dstat output ---\n" #                      <----- section division

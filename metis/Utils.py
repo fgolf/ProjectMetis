@@ -324,10 +324,10 @@ def condor_rm(cluster_ids=[]): # pragma: no cover
     Takes in a list of cluster_ids to condor_rm for the current user
     """
     if cluster_ids:
-        do_cmd("condor_rm {0}".format(",".join(map(str,cluster_ids))))
+        do_cmd_safe(["condor_rm"] + [str(cid) for cid in cluster_ids])
 
 def condor_release(): # pragma: no cover
-    do_cmd("condor_release {0}".format(os.getenv("USER")))
+    do_cmd_safe(["condor_release", os.getenv("USER")])
 
 def condor_submit(**kwargs): # pragma: no cover
     """
@@ -462,7 +462,11 @@ when_to_transfer_output = ON_EXIT
     schedd = kwargs.get("schedd","") # see note in condor_q about `schedd`
     if schedd:
         extra_cli += " -name {} ".format(schedd)
-    out = do_cmd("mkdir -p {0}/std_logs/  ; condor_submit {1}/submit.cmd {2}".format(params["logdir"],exe_dir,extra_cli))
+    do_cmd_safe(["mkdir", "-p", "{}/std_logs/".format(params["logdir"])])
+    submit_cmd = ["condor_submit", "{}/submit.cmd".format(exe_dir)]
+    if extra_cli.strip():
+        submit_cmd.extend(extra_cli.split())
+    out = do_cmd_safe(submit_cmd)
 
     succeeded = False
     cluster_id = -1
@@ -519,10 +523,10 @@ def update_dashboard(webdir=None, jsonfile=None): # pragma: no cover
         raise Exception("Um, we need a web directory, dude.")
     if not os.path.exists(os.path.expanduser(webdir)):
         mb = metis_base()
-        do_cmd("mkdir -p {}/plots/".format(webdir), dryRun=False)
-        do_cmd("cp -rp {}/dashboard/* {}/".format(mb,webdir), dryRun=False)
+        do_cmd_safe(["mkdir", "-p", "{}/plots/".format(webdir)])
+        do_cmd("cp -rp {}/dashboard/* {}/".format(mb, webdir), dryRun=False)
     if jsonfile and os.path.exists(jsonfile):
-        do_cmd("cp {} {}/".format(jsonfile, webdir), dryRun=False)
+        do_cmd_safe(["cp", jsonfile, "{}/".format(webdir)])
         do_cmd("cp plots/* {}/plots/".format(webdir), dryRun=False)
 
 def hsv_to_rgb(h, s, v): # pragma: no cover
@@ -541,11 +545,13 @@ def hsv_to_rgb(h, s, v): # pragma: no cover
     if i == 5: return [v, p, q]
 
 def send_email(subject, body=""): # pragma: no cover
+    import subprocess as sp
     email = do_cmd("git config --list | grep 'user.email' | cut -d '=' -f2")
     firstname = do_cmd("git config --list | grep 'user.name' | cut -d '=' -f2 | cut -d ' ' -f1")
     if "@" not in email:
         return
-    do_cmd("echo '{0}' | mail -s '[UAFNotify] {1}' {2}".format(body, subject, email))
+    sp.run(["mail", "-s", "[UAFNotify] {}".format(subject), email.strip()],
+           input=body.encode(), check=False)
 
 def get_stats(nums):
     length = len(nums)

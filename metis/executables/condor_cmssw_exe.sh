@@ -14,7 +14,7 @@ OTHEROUTPUTS=${11}
 PSETARGS="${@:12}" # since args can have spaces, we take 10th-->last argument as one
 
 # Make sure OUTPUTNAME doesn't have .root since we add it manually
-OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
+OUTPUTNAME=$(echo "$OUTPUTNAME" | sed 's/\.root//')
 
 export SCRAM_ARCH=${SCRAMARCH}
 
@@ -49,7 +49,7 @@ function edit_pset {
     if [[ "$INPUTFILENAMES" != "dummy"* ]]; then
         echo "process.source.fileNames = cms.untracked.vstring([" >> pset.py
         for INPUTFILENAME in $(echo "$INPUTFILENAMES" | sed -n 1'p' | tr ',' '\n'); do
-            INPUTFILENAME=$(echo $INPUTFILENAME | sed 's|^/ceph/cms||')
+            INPUTFILENAME=$(echo "$INPUTFILENAME" | sed 's|^/ceph/cms||')
             # INPUTFILENAME="root://xrootd.unl.edu/${INPUTFILENAME}"
             echo "\"${INPUTFILENAME}\"," >> pset.py
         done
@@ -143,22 +143,22 @@ fi
 # a tarball made outside of the full CMSSW directory, and must be handled
 # differently
 tarfile=package.tar.gz
-if [ ! -z $(tar -tf ${tarfile} | head -n 1 | grep "^CMSSW") ]; then
+if [ ! -z "$(tar -tf ${tarfile} | head -n 1 | grep "^CMSSW")" ]; then
     echo "this is a full cmssw tar file"
     tar xf ${tarfile}
-    cd $CMSSWVERSION
+    cd "$CMSSWVERSION"
     echo $PWD
     echo "Running ProjectRename"
     scramv1 b ProjectRename
-    echo "Running `scramv1 runtime -sh`"
-    eval `scramv1 runtime -sh`
+    echo "Running $(scramv1 runtime -sh)"
+    eval $(scramv1 runtime -sh)
     mv ../$PSET pset.py
     mv ../${tarfile} .
 else
     echo "this is a selective cmssw tar file"
-    eval `scramv1 project CMSSW $CMSSWVERSION`
-    cd $CMSSWVERSION
-    eval `scramv1 runtime -sh`
+    eval $(scramv1 project CMSSW $CMSSWVERSION)
+    cd "$CMSSWVERSION"
+    eval $(scramv1 runtime -sh)
     mv ../$PSET pset.py
     if [ -e ../${tarfile} ]; then
         mv ../${tarfile} ${tarfile};
@@ -253,7 +253,7 @@ except Exception as ex:
         foundBad = True
 if foundBad:
     print "[RSR] removing output file because it does not deserve to live"
-    os.system("rm ${OUTPUTNAME}.root")
+    os.remove("${OUTPUTNAME}.root")
 else: print "[RSR] passed the rigorous sweeproot"
 EOL
 
@@ -285,17 +285,17 @@ chirp ChirpMetisStatus "before_copy"
 # COPY_DEST="gsiftp://gftp.t2.ucsd.edu${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 # stageout $COPY_SRC $COPY_DEST
 
-COPY_SRC="file://`pwd`/${OUTPUTNAME}.root"
+COPY_SRC="file://$(pwd)/${OUTPUTNAME}.root"
 substr="/ceph/cms"
 OUTPUTDIRSTORE=${OUTPUTDIR#$substr}
-#OUTPUTDIRSTORE=$(echo $OUTPUTDIR | sed -i "s/\/ceph\/cms//g")
+#OUTPUTDIRSTORE=$(echo "$OUTPUTDIR" | sed -i "s/\/ceph\/cms//g")
 COPY_DEST="davs://redirector.t2.ucsd.edu:1095${OUTPUTDIRSTORE}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
 
 for OTHEROUTPUT in $(echo "$OTHEROUTPUTS" | sed -n 1'p' | tr ',' '\n'); do
     [ -e ${OTHEROUTPUT} ] && {
-        NOROOT=$(echo $OTHEROUTPUT | sed 's/\.root//')
-        COPY_SRC="file://`pwd`/${NOROOT}.root"
+        NOROOT=$(echo "$OTHEROUTPUT" | sed 's/\.root//')
+        COPY_SRC="file://$(pwd)/${NOROOT}.root"
 				COPY_DEST="davs://redirector.t2.ucsd.edu:1095${OUTPUTDIRSTORE}/${OUTPUTNAME}_${IFILE}.root"
         stageout $COPY_SRC $COPY_DEST
     }

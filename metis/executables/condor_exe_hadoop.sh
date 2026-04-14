@@ -16,9 +16,9 @@ echo "[wrapper] printing env"
 printenv
 echo
 
-echo "[wrapper] hostname  = " `hostname`
-echo "[wrapper] date      = " `date`
-echo "[wrapper] linux timestamp = " `date +%s`
+echo "[wrapper] hostname  = " $(hostname)
+echo "[wrapper] date      = " $(date)
+echo "[wrapper] linux timestamp = " $(date +%s)
 
 ######################
 # Set up environment #
@@ -32,15 +32,15 @@ tar -xvf package.tar.gz
 
 # Build
 echo "using CMSSW version " ${CMSSW_VER}
-cd $CMSSW_VER/src
+cd "$CMSSW_VER/src"
 echo "[wrapper] in directory: " ${PWD}
 echo "[wrapper] ls : " 
 ls
 echo "[wrapper] attempting to build"
-eval `scramv1 runtime -sh`
+eval $(scramv1 runtime -sh)
 scramv1 b ProjectRename
 scram b -j3
-eval `scramv1 runtime -sh`
+eval $(scramv1 runtime -sh)
 
 cmssw_cfg="template.py"
 
@@ -89,12 +89,12 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32( -1 ) )
 " >> $cmssw_cfg 
 
 # Create tag file
-echo "[wrapper `date +\"%Y%m%d %k:%M:%S\"`] running: cmsRun "${cmssw_cfg}
-cmsRun ${cmssw_cfg} 
+echo "[wrapper $(date +\"%Y%m%d %k:%M:%S\")] running: cmsRun "${cmssw_cfg}
+cmsRun ${cmssw_cfg}
 
 if [ "$?" != "0" ]; then
     echo "Removing output file because cmsRun crashed with exit code $?"
-    rm *.root
+    rm -f ./*.root
 fi
 
 echo "[wrapper] output root files are currently: "
@@ -103,4 +103,4 @@ ls -lh *.root
 substr="/hadoop/cms"
 new_OUTPUTDIR=${OUTPUTDIR#$substr}
 # Copy output
-env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 4200 --verbose file://`pwd`/nanoaod.root davs://redirector.t2.ucsd.edu:1094/${new_OUTPUTDIR}/${OUTPUTFILENAME}_${INDEX}.root --checksum ADLER32
+env -i X509_USER_PROXY=${X509_USER_PROXY} gfal-copy -p -f -t 4200 --verbose file://$(pwd)/nanoaod.root davs://redirector.t2.ucsd.edu:1094/${new_OUTPUTDIR}/${OUTPUTFILENAME}_${INDEX}.root --checksum ADLER32

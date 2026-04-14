@@ -7,7 +7,7 @@ import logging
 import http.client
 import datetime
 
-from metis.Utils import do_cmd, get_proxy_file, setup_logger, cached
+from metis.Utils import do_cmd, do_cmd_safe, get_proxy_file, setup_logger, cached
 
 try:
     pass
@@ -126,7 +126,7 @@ class CrabManager(object):
         # more robust check
         crablog = "{0}/crab.log".format(self.task_dir)
         if os.path.isfile(crablog):
-            taskline = do_cmd("/bin/grep 'Success' -A 1 -m 1 {0} | /bin/grep 'Task name'".format(crablog))
+            taskline = do_cmd_safe(["/bin/grep", "Success", "-A", "1", "-m", "1", crablog])
             if "Task name:" in taskline:
                 self.unique_request_name = taskline.split("Task name:")[1].strip()
             self.logger.debug("found crablog {0} and parsing to find unique_request_name: {1}".format(crablog, self.unique_request_name))
