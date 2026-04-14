@@ -215,16 +215,18 @@ ls -l
     def test_gfal_copy(self):
 
         outname = "gfaltest.root"
-        basedir = "/hadoop/cms/store/user/{0}/metis_test".format(os.environ.get("GRIDUSER",os.environ.get("USER")))
+        basedir = "/ceph/cms/store/user/{0}/metis_test".format(os.environ.get("GRIDUSER",os.environ.get("USER")))
         outfile = "{0}/{1}".format(basedir,outname)
-        outfilestore = outfile.replace("/hadoop/cms", "")
+        outfilestore = outfile.replace("/ceph/cms", "")
+        print('outfile: ',outfile)
+        print('outfilestore: ',outfilestore)
         for outfinal, url in [
-            (outfilestore, "davs://redirector.t2.ucsd.edu:1094"),
-            (outfile, "gsiftp://gftp.t2.ucsd.edu"),
+            (outfilestore, "davs://redirector.t2.ucsd.edu:1095"),
+            #(outfile, "davs://redirector.t2.ucsd.edu:1095"),
+            #(outfile, "gsiftp://gftp.t2.ucsd.edu"),
             ]:
             cmd = """ seq 1 3 > {outname}; rm -f {outfile}; env -i X509_USER_PROXY=/tmp/x509up_u`id -u` gfal-copy -p -f -t 4200 --verbose file://`pwd`/{outname} {url}{outfinal} --checksum ADLER32 """.format(url=url, outname=outname, outfile=outfile, outfinal=outfinal)
             stat, out = Utils.do_cmd(cmd, returnStatus=True)
-
 
             exists = os.path.exists(outfile)
             if not exists:

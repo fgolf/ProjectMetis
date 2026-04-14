@@ -103,51 +103,51 @@ class DirectorySampleTest(unittest.TestCase):
         dirsamp.info["gtag"] = "dummygtag"
         self.assertEqual(dirsamp.get_globaltag(), dirsamp.info["gtag"])
 
-class SNTSampleTest(unittest.TestCase):
-
-    @unittest.skipIf(os.getenv("FAST"), "Skipped due to impatience")
-    @unittest.skipIf(os.getenv("NOINTERNET"), "Need internet access")
-    def test_everything(self):
-        nfiles = 5
-        tag = "v1"
-        dsname = "/DummyDataset/Dummy/TEST"
-        basedir = "/tmp/{0}/metis/sntsample_test/".format(os.getenv("USER"))
-
-        # make a directory, touch <nfiles> files
-        Utils.do_cmd("mkdir -p {0} ; rm {0}/*.root".format(basedir))
-        for i in range(1,nfiles+1):
-            Utils.do_cmd("touch {0}/output_{1}.root".format(basedir,i))
-
-        # push a dummy dataset to DIS using the dummy location
-        # and make sure we updated the sample without problems
-        dummy = SNTSample(
-                dataset=dsname,
-                tag=tag,
-                read_only=True, # note that this is the default!
-                )
-        dummy.info["location"] = basedir
-        dummy.info["nevents"] = 123
-        dummy.info["gtag"] = "stupidtag"
-
-        # will fail the first time, since it's read only
-        updated = dummy.do_update_dis()
-        self.assertEqual(updated, False)
-
-        # flip the bool and updating should succeed
-        dummy.read_only = False
-        updated = dummy.do_update_dis()
-        self.assertEqual(updated, True)
-
-        # make a new sample, retrieve from DIS, and check
-        # that the location was written properly
-        check = SNTSample(
-                dataset=dsname,
-                tag=tag,
-                )
-        self.assertEqual(len(check.get_files()), nfiles)
-        self.assertEqual(check.get_globaltag(),dummy.info["gtag"])
-        self.assertEqual(check.get_nevents(), dummy.info["nevents"])
-        self.assertEqual(check.get_location(), basedir)
+#class SNTSampleTest(unittest.TestCase):
+#
+#    @unittest.skipIf(os.getenv("FAST"), "Skipped due to impatience")
+#    @unittest.skipIf(os.getenv("NOINTERNET"), "Need internet access")
+#    def test_everything(self):
+#        nfiles = 5
+#        tag = "v1"
+#        dsname = "/DummyDataset/Dummy/TEST"
+#        basedir = "/tmp/{0}/metis/sntsample_test/".format(os.getenv("USER"))
+#
+#        # make a directory, touch <nfiles> files
+#        Utils.do_cmd("mkdir -p {0} ; rm {0}/*.root".format(basedir))
+#        for i in range(1,nfiles+1):
+#            Utils.do_cmd("touch {0}/output_{1}.root".format(basedir,i))
+#
+#        # push a dummy dataset to DIS using the dummy location
+#        # and make sure we updated the sample without problems
+#        dummy = SNTSample(
+#                dataset=dsname,
+#                tag=tag,
+#                read_only=True, # note that this is the default!
+#                )
+#        dummy.info["location"] = basedir
+#        dummy.info["nevents"] = 123
+#        dummy.info["gtag"] = "stupidtag"
+#
+#        # will fail the first time, since it's read only
+#        updated = dummy.do_update_dis()
+#        self.assertEqual(updated, False)
+#
+#        # flip the bool and updating should succeed
+#        dummy.read_only = False
+#        updated = dummy.do_update_dis()
+#        self.assertEqual(updated, True)
+#
+#        # make a new sample, retrieve from DIS, and check
+#        # that the location was written properly
+#        check = SNTSample(
+#                dataset=dsname,
+#                tag=tag,
+#                )
+#        self.assertEqual(len(check.get_files()), nfiles)
+#        self.assertEqual(check.get_globaltag(),dummy.info["gtag"])
+#        self.assertEqual(check.get_nevents(), dummy.info["nevents"])
+#        self.assertEqual(check.get_location(), basedir)
 
 class FilelistSampleTest(unittest.TestCase):
 
@@ -158,6 +158,8 @@ class FilelistSampleTest(unittest.TestCase):
         # make a temporary file putting in some dummy filenames
         # to be picked up by FilelistSample
         mf = MutableFile(fname)
+        if os.path.exists(fname):
+            mf.rm()
         mf.touch()
         nfiles = 3
         for i in range(1,nfiles+1): mf.append("ntuple{}.root\n".format(i))

@@ -65,7 +65,13 @@ class Sample(object):
         if not hasattr(self, '_das_client') or self._das_client is None:
             try:
                 from das_api import DAS
-                self._das_client = DAS()
+                # Auto-detect x509 proxy cert for authentication
+                proxy = os.environ.get("X509_USER_PROXY")
+                if not proxy:
+                    default_proxy = "/tmp/x509up_u{0}".format(os.getuid())
+                    if os.path.exists(default_proxy):
+                        proxy = default_proxy
+                self._das_client = DAS(proxy_cert=proxy)
             except ImportError:
                 self.logger.error("Cannot import das_api. Make sure mcm-tools is on your PYTHONPATH.")
                 raise

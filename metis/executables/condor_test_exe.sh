@@ -44,7 +44,7 @@ ls -lrth
 
 echo -e "\n--- begin copying output ---\n" #                    <----- section division
 echo "Sending output file $OUTPUTNAME.root"
-gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTNAME}.root gsiftp://gftp.t2.ucsd.edu${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTNAME}.root davs://redirector.t2.ucsd.edu:1095/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
 echo -e "\n--- end copying output ---\n" #                      <----- section division
 
 echo -e "\n--- begin dstat output ---\n" #                      <----- section division

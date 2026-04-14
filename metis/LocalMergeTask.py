@@ -31,7 +31,7 @@ class LocalMergeTask(Task):
         if self.io_mapping: return
         self.io_mapping = [ 
                 [
-                    map(File,self.input_filenames),
+                    list(map(File,self.input_filenames)),
                     [File(self.output_filename),]
                     ] 
                 ]

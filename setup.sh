@@ -7,7 +7,7 @@ export PYTHONPATH=${METIS_BASE}:$PYTHONPATH
 
 # Add mcm-tools to PYTHONPATH so that `from das_api import DAS` works
 # Adjust this path if mcm-tools lives elsewhere
-MCM_TOOLS_DIR="${HOME}/public_html/mcm-tools"
+MCM_TOOLS_DIR="${HOME}/sandbox/mcm-tools"
 if [ -d "$MCM_TOOLS_DIR" ]; then
     export PYTHONPATH=${MCM_TOOLS_DIR}:$PYTHONPATH
 fi

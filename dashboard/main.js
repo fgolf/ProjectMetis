@@ -78,8 +78,8 @@ function setUpDOM(data) {
         var jsStr = syntaxHighlight(JSON.stringify(sample_toshow, undefined, 4));
 
         // turn dataset into a DIS link
-        var link =  "http://uaf-7.t2.ucsd.edu/~namin/dis2/?type=basic&short=true&query="+general["dataset"];
-        var link_handler =  "http://uaf-7.t2.ucsd.edu:50010/dis/serve?type=basic&short=true&query="+general["dataset"];
+        var link =  "http://uaf-2.t2.ucsd.edu/~fgolf/dis/?type=basic&short=true&query="+general["dataset"];
+        var link_handler =  "http://uaf-2.t2.ucsd.edu:8887/dis/serve?type=basic&short=true&query="+general["dataset"];
         jsStr = jsStr.replace("\"dataset\":", 
             ` <a href="${link}" style="text-decoration: underline" title="<iframe src='${link_handler}' style='background-color: #fff; width:650px;'></iframe>" data-html="true" data-toggle="tooltip">dataset</a>: `
         );

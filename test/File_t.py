@@ -113,6 +113,21 @@ class FileDBSTest(unittest.TestCase):
 
 class MutableFileTest(unittest.TestCase):
 
+    def setUp(self):
+        # Clean up any leftover files from previous runs
+        for name in ["file_1.root", "file_2.txt", "chmodtest.txt"]:
+            if os.path.exists(name):
+                os.remove(name)
+        if os.path.exists("mf_test/"):
+            os.rmdir("mf_test/")
+
+    def tearDown(self):
+        for name in ["file_1.root", "file_2.txt", "chmodtest.txt"]:
+            if os.path.exists(name):
+                os.remove(name)
+        if os.path.exists("mf_test/"):
+            os.rmdir("mf_test/")
+
     def test_file(self):
         f1 = MutableFile("file_1.root")
         self.assertEqual(os.path.exists(f1.get_name()), False)

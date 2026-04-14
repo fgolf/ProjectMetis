@@ -32,7 +32,7 @@ class CondorWorkflowTest(unittest.TestCase):
         for i in range(1,njobs+1):
             Utils.do_cmd("touch {0}/input_{1}.root".format(basedir, i))
 
-        logging.getLogger("logger_metis").disabled = True
+        logging.getLogger("logger_metis").disabled = False
         dummy = CondorTask(
                 sample = DirectorySample(
                     location = basedir,
@@ -49,10 +49,11 @@ class CondorWorkflowTest(unittest.TestCase):
                 )
 
         # clean up previous directory
-        Utils.do_cmd("rm -rf {0}".format(dummy.get_outputdir()))
+        #Utils.do_cmd("rm -rf {0}".format(dummy.get_outputdir()))
 
         is_complete = False
         for t in [1.0, 1.0, 2.0, 3.0, 5.0, 10.0, 20.0]:
+        #for t in [1.0, 10.0, 30.0, 60.0]:
             dummy.process()
             time.sleep(t)
             is_complete = dummy.complete()

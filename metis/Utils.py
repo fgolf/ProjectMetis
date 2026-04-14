@@ -69,6 +69,8 @@ class cached(object): # pragma: no cover
             self.cached_function_responses = shelve.open(self.cache_file)
             fcntl.flock(lockfd, fcntl.LOCK_EX)
             max_age = kwargs.get('max_age', self.default_max_age)
+            if isinstance(max_age, (int, float)):
+                max_age = datetime.timedelta(seconds=max_age)
             funcname = func.__name__
             key = "|".join([str(funcname), str(args), str(kwargs)])
             if not max_age or key not in self.cached_function_responses or (datetime.datetime.now() - self.cached_function_responses[key]['fetch_time'] > max_age):
@@ -135,9 +137,9 @@ def do_cmd_safe(args, returnStatus=False, dryRun=False):
     else:
         import subprocess as sp
         try:
-            result = sp.run(args, capture_output=True, text=True)
+            result = sp.run(args, stdout=sp.PIPE, stderr=sp.PIPE)
             status = result.returncode
-            out = result.stdout + result.stderr
+            out = (result.stdout + result.stderr).decode("utf-8", errors="replace")
         except Exception as e:
             status = 1
             out = str(e)
