@@ -91,8 +91,6 @@ if __name__ == "__main__":
     # data = StatsParser().get_failure_info(tag="CMS4_V09-04-18_newdeepflav")
     data = StatsParser().get_failure_info(tag="CMS4_V10-02-05")
 
-    sys.path.insert(0,'/home/users/namin/.local/lib/python2.7/site-packages/')
-    import numpy as np
     import matplotlib as mpl
     mpl.use('Agg')
     import matplotlib.pyplot as plt

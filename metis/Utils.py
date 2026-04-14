@@ -18,7 +18,7 @@ from collections import Counter
 from contextlib import contextmanager
 
 # from `condor_status -any -const 'MyType=="glideresource"' -af GLIDEIN_CMSSite | sort | uniq`
-# http://uaf-10.t2.ucsd.edu/~namin/dump/badsites.html
+# http://uaf-4.t2.ucsd.edu/~fgolf/dump/badsites.html
 good_sites = set([
 
             "T2_US_Caltech",

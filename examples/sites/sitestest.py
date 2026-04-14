@@ -25,15 +25,13 @@ between a dummy pset and a cms4 pset.
 #!/usr/bin/env bash
 source /code/osgcode/cmssoft/cms/cmsset_default.sh
 cd /cvmfs/cms.cern.ch/slc6_amd64_gcc630/cms/cmssw/CMSSW_9_4_9; cmsenv; cd -
-cd /home/users/namin/2017/ProjectMetis/
-export METIS_BASE=`pwd`
-export PYTHONPATH=`pwd`:$PYTHONPATH
-export PATH=`pwd`/scripts:$PATH
-cd dailychecker
+cd $METIS_BASE
+source setup.sh
+cd examples/sites
 python sitestest.py >> log_sitestest.txt
 
 # crontab
-# 30 5 * * * /home/users/namin/2017/ProjectMetis/examples/sites/do.sh >/dev/null 2>&1
+# 30 5 * * * $METIS_BASE/examples/sites/do.sh >/dev/null 2>&1
 """
 
 allsites = [
