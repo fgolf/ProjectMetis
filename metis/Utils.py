@@ -4,12 +4,19 @@ import time
 import os
 import json
 import subprocess as commands
-try:
-    import htcondor
-    _ = htcondor.Schedd()
-    have_python_htcondor_bindings = True
-except:
-    have_python_htcondor_bindings = False
+htcondor = None
+_htcondor_checked = False
+def _check_htcondor_bindings():
+    global htcondor, _htcondor_checked
+    if not _htcondor_checked:
+        try:
+            import htcondor as _htcondor
+            _htcondor.Schedd()
+            htcondor = _htcondor
+        except Exception:
+            htcondor = None
+        _htcondor_checked = True
+    return htcondor is not None
 import logging
 import datetime
 from collections import Counter
@@ -291,7 +298,7 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=No
 
     jobs = []
 
-    if have_python_htcondor_bindings and use_python_bindings:
+    if _check_htcondor_bindings() and use_python_bindings:
         # NOTE doesn't support `user`, `cluster_id`, `schedd`, `do_long` kwargs options
         constraints = "&&".join(selection_strs_cpp)
         output = htcondor.Schedd().xquery(constraints,columns)
