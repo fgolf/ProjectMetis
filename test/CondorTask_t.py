@@ -89,7 +89,7 @@ class CondorTaskTest(unittest.TestCase):
         inps, output = self.dummy.get_io_mapping()[0]
         self.assertEqual(self.dummy.get_inputs_for_output(output), inps)
         self.assertEqual(self.dummy.get_inputs_for_output(output.get_name()), inps)
-        self.assertEqual(self.dummy.get_inputs_for_output("unknown"), "unknown")
+        self.assertIsNone(self.dummy.get_inputs_for_output("unknown"))
 
     def test_prepare_inputs(self):
         shfiles = glob.glob(self.dummy.get_taskdir()+"/*.sh")

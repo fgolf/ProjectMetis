@@ -93,8 +93,13 @@ class CondorTask(Task):
         self.job_submission_history = {}
         self.queried_nevents = 0
 
-        # Make a unique name from this task for pickling purposes
+        # Make a unique name from this task for identification purposes
         self.unique_name = kwargs.get("unique_name", "{0}_{1}_{2}".format(self.get_task_name(), self.sample.get_datasetname().replace("/", "_").lstrip("_"), self.tag))
+
+        # Validate that dataset/tag don't introduce path traversal
+        for component in [self.unique_name, self.tag, self.output_dir]:
+            if ".." in str(component):
+                raise ValueError("Unsafe path component (contains '..'): {}".format(component))
 
         # Pass all of the kwargs to the parent class
         super(CondorTask, self).__init__(**kwargs)
@@ -128,16 +133,16 @@ class CondorTask(Task):
         """
         Takes either a File object or a filename
         and returns the list of inputs in io_mapping
-        corresponding to that output
+        corresponding to that output, or None if not found
         """
         for inps, out in self.io_mapping:
-            if type(output) == str:
+            if isinstance(output, str):
                 if os.path.normpath(output) == os.path.normpath(out.get_name()):
                     return inps
             else:
                 if out == output:
                     return inps
-        return output
+        return None
 
     def update_mapping(self, flush=False, override_chunks=[]):
         """
@@ -145,8 +150,8 @@ class CondorTask(Task):
         """
 
         # get set of filenames from File objects that have already been mapped
-        already_mapped_inputs = set(map(lambda x: x.get_name(), self.get_inputs(flatten=True)))
-        already_mapped_outputs = list(map(lambda x: x.get_index(), self.get_outputs()))
+        already_mapped_inputs = {x.get_name() for x in self.get_inputs(flatten=True)}
+        already_mapped_outputs = [x.get_index() for x in self.get_outputs()]
         nextidx = 1
         if already_mapped_outputs:
             nextidx = max(already_mapped_outputs) + 1
@@ -181,7 +186,7 @@ class CondorTask(Task):
                 continue
             output_path = "{0}/{1}_{2}.{3}".format(self.get_outputdir(), prefix, nextidx, suffix)
             output_file = EventsFile(output_path)
-            nevents_in_output = sum(map(lambda x: x.get_nevents(), chunk))
+            nevents_in_output = sum(x.get_nevents() for x in chunk)
             output_file.set_nevents(nevents_in_output)
             self.io_mapping.append([chunk, output_file])
             nextidx += 1
@@ -247,16 +252,13 @@ class CondorTask(Task):
         return_fraction specified as True
         """
         self.recache_outputs()
-        print('status: ',list(map(lambda output: output.get_status(), self.get_outputs())))
-        bools = list(map(lambda output: output.get_status() == Constants.DONE, self.get_outputs()))
-        if len(bools) == 0:
+        outputs = self.get_outputs()
+        if not outputs:
             frac = 0.
         else:
-            frac = 1.0 * sum(bools) / len(bools)
-        if return_fraction:
-            return frac
-        else:
-            return frac >= self.min_completion_fraction
+            done_count = sum(1 for out in outputs if out.get_status() == Constants.DONE)
+            frac = done_count / len(outputs)
+        return frac if return_fraction else frac >= self.min_completion_fraction
 
     def try_to_complete(self):
         """
@@ -295,14 +297,14 @@ class CondorTask(Task):
         """
         nfiles_reset = 0
         if self.io_mapping:
-            # get first output
             path_to_check = self.io_mapping[0][1].get_basepath()
-            fnames = []
-            if os.path.exists(path_to_check):
-                fnames = [os.path.normpath("{}/{}".format(path_to_check,x)) for x in os.listdir(path_to_check)]
+            fnames = set()
+            try:
+                fnames = {os.path.normpath(os.path.join(path_to_check, x)) for x in os.listdir(path_to_check)}
+            except OSError:
+                pass
             for _, out in self.io_mapping:
-                if not out.is_fake() and out.exists() and (os.path.normpath(out.get_name()) not in fnames):
-                    # file apparently exists (according to cache), but not actually there, so reset cache
+                if not out.is_fake() and out.exists() and os.path.normpath(out.get_name()) not in fnames:
                     out.recheck()
                     out.set_status(Constants.INVALID)
                     nfiles_reset += 1
@@ -315,7 +317,8 @@ class CondorTask(Task):
         If fake is True, then we mark the outputs as done and never submit
         """
         condor_job_dicts = self.get_running_condor_jobs()
-        condor_job_indices = set([int(rj["jobnum"]) for rj in condor_job_dicts])
+        condor_jobs_by_index = {int(rj["jobnum"]): rj for rj in condor_job_dicts}
+        condor_job_indices = set(condor_jobs_by_index.keys())
 
         nfiles_reset = self.recache_outputs()
         if nfiles_reset > 0:
@@ -346,14 +349,14 @@ class CondorTask(Task):
                     })
 
             else:
-                this_job_dict = next(rj for rj in condor_job_dicts if int(rj["jobnum"]) == index)
+                this_job_dict = condor_jobs_by_index[index]
                 action_type = self.handle_condor_job(this_job_dict, out)
 
         if to_submit:
             v_ins = [d["ins"] for d in to_submit]
             v_out = [d["out"] for d in to_submit]
             succeeded, cluster_id = self.submit_multiple_condor_jobs(v_ins, v_out, fake=fake, optimizer=optimizer)
-            procids = list(map(str,range(len(v_out))))
+            procids = [str(i) for i in range(len(v_out))]
             if succeeded:
                 for out,procid in zip(v_out,procids):
                     index = out.get_index()  # "merged_ntuple_42.root" --> 42
@@ -439,7 +442,7 @@ class CondorTask(Task):
         """
         pass
 
-    def get_running_condor_jobs(self, extra_columns=[]):
+    def get_running_condor_jobs(self, extra_columns=None):
         """
         Get list of dictionaries for condor jobs satisfying the
         classad given by the unique_name, requesting an extra
@@ -449,6 +452,8 @@ class CondorTask(Task):
         within a task has a unique job num corresponding to the
         output file index
         """
+        if extra_columns is None:
+            extra_columns = []
         return Utils.condor_q(selection_pairs=[["taskname", self.unique_name]], extra_columns=["jobnum"]+extra_columns, use_python_bindings=True)
 
     def submit_multiple_condor_jobs(self, v_ins, v_out, fake=False, optimizer=None):
@@ -458,7 +463,7 @@ class CondorTask(Task):
         if self.output_dir.startswith(prefix):
             outdir = self.output_dir[len(prefix):]
         outname_noext = self.output_name.rsplit(".", 1)[0]
-        v_inputs_commasep = [",".join(map(lambda x: x.get_name(), ins)) for ins in v_ins]
+        v_inputs_commasep = [",".join(x.get_name() for x in ins) for ins in v_ins]
         v_index = [out.get_index() for out in v_out]
         cmssw_ver = self.cmssw_version
         scramarch = self.scram_arch
@@ -500,30 +505,6 @@ class CondorTask(Task):
                     multiple=True,
                     fake=fake, **extra
                )
-
-
-    # def submit_condor_job(self, ins, out, fake=False):
-
-    #     outdir = self.output_dir
-    #     outname_noext = self.output_name.rsplit(".", 1)[0]
-    #     inputs_commasep = ",".join(map(lambda x: x.get_name(), ins))
-    #     index = out.get_index()
-    #     cmssw_ver = self.cmssw_version
-    #     scramarch = self.scram_arch
-    #     executable = self.executable_path
-    #     arguments = [outdir, outname_noext, inputs_commasep,
-    #                  index, cmssw_ver, scramarch, self.arguments]
-    #     logdir_full = os.path.abspath("{0}/logs/".format(self.get_taskdir()))
-    #     package_full = os.path.abspath(self.package_path)
-    #     input_files = [package_full] if self.tarfile else []
-    #     input_files += self.additional_input_files
-    #     extra = self.kwargs.get("condor_submit_params", {})
-    #     return Utils.condor_submit(
-    #                 executable=executable, arguments=arguments,
-    #                 inputfiles=input_files, logdir=logdir_full,
-    #                 selection_pairs=[["taskname", self.unique_name], ["jobnum", index], ["tag", self.tag]],
-    #                 fake=fake, **extra
-    #            )
 
 
     def prepare_inputs(self):
@@ -601,7 +582,7 @@ class CondorTask(Task):
             d_jobs[index] = {}
             d_jobs[index]["output"] = [out.get_name(), out.get_nevents()]
             d_jobs[index]["output_exists"] = out.exists()
-            d_jobs[index]["inputs"] = list(map(lambda x: [x.get_name(), x.get_nevents()], ins))
+            d_jobs[index]["inputs"] = [[x.get_name(), x.get_nevents()] for x in ins]
             submission_history = d_history.get(index, [])
             is_on_condor = False
             last_clusterid = -1
