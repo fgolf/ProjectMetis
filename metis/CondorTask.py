@@ -35,7 +35,12 @@ class CondorTask(IOMappingMixin, Task):
         :kwarg recopy_inputs: force re-copy/prepare inputs (executable, tarfile, ...) every class instantiation
         :kwarg use_haddop: force to use /hadoop instead of /ceph to store outputs (deprecated, ceph is newer and more stable)
         """
+        # Validate required parameters
         self.sample = kwargs.get("sample", None)
+        if self.sample is None:
+            raise ValueError("CondorTask requires a 'sample' parameter")
+
+        # Task configuration
         self.min_completion_fraction = kwargs.get("min_completion_fraction", 1.0)
         self.open_dataset = kwargs.get("open_dataset", False)
         self.events_per_output = kwargs.get("events_per_output", -1)
@@ -43,47 +48,30 @@ class CondorTask(IOMappingMixin, Task):
         self.MB_per_output = kwargs.get("MB_per_output", -1)
         self.output_name = kwargs.get("output_name", "output.root")
         self.arguments = kwargs.get("arguments", "")
-        # self.output_dir = kwargs.get("output_dir",None)
         self.scram_arch = kwargs.get("scram_arch", "slc6_amd64_gcc530")
         self.tag = kwargs.get("tag", "v0")
-        self.global_tag = kwargs.get("global_tag",None)
+        self.global_tag = kwargs.get("global_tag", None)
         self.cmssw_version = kwargs.get("cmssw_version", None)
         self.tarfile = kwargs.get("tarfile", None)
         self.additional_input_files = kwargs.get("additional_input_files", [])
         self.sparms = kwargs.get("sparms", [])
-        # LHE, for example, might be large, and we want to use
-        # skip events to process event chunks within files
-        # in that case, we need events_per_output > 0 and total_nevents > 0
         self.split_within_files = kwargs.get("split_within_files", False)
         self.total_nevents = kwargs.get("total_nevents", -1)
-        self.max_jobs = kwargs.get("max_jobs",0)
-        self.snt_dir = kwargs.get("snt_dir",False)
-        self.recopy_inputs = kwargs.get("recopy_inputs",False)
-        self.use_hadoop = kwargs.get("use_hadoop",False)
-
-        # If we have this attribute, then we must have gotten it from
-        # a subclass (so use that executable instead of just bland condor exe)
-        if not hasattr(self, "input_executable"):
-            self.input_executable = kwargs.get("executable", self.get_metis_base() + "metis/executables/condor_exe.sh")
-            if self.use_hadoop:
-                self.input_executable = kwargs.get("executable", self.get_metis_base() + "metis/executables/condor_exe_hadoop.sh")
-
+        self.max_jobs = kwargs.get("max_jobs", 0)
+        self.snt_dir = kwargs.get("snt_dir", False)
+        self.recopy_inputs = kwargs.get("recopy_inputs", False)
+        self.use_hadoop = kwargs.get("use_hadoop", False)
         self.read_only = kwargs.get("read_only", False)
-        special_dir = kwargs.get("special_dir", "ProjectMetis")
 
-        # If we didn't get an output directory, use the canonical format. E.g.,
-        #   /hadoop/cms/store/user/namin/ProjectMetis/MET_Run2017A-PromptReco-v2_MINIAOD_CMS4_V00-00-03
-        if self.snt_dir:
-            self.output_dir = "/ceph/cms/store/group/snt/{0}/{1}_{2}/".format(special_dir, self.sample.get_datasetname().replace("/", "_").lstrip("_"), self.tag)
-            if self.use_hadoop:
-                self.output_dir = "/hadoop/cms/store/group/snt/{0}/{1}_{2}/".format(special_dir, self.sample.get_datasetname().replace("/", "_").lstrip("_"), self.tag)
-        else:
-            hadoop_user = os.environ.get("GRIDUSER","").strip()  # NOTE, might be different for some weird folks
-            if not hadoop_user: hadoop_user = os.environ.get("USER") # fallback
-            self.outdir_name = kwargs.get("outdir_name", self.sample.get_datasetname().replace("/", "_").lstrip("_"))
-            self.output_dir = kwargs.get("output_dir", "/ceph/cms/store/user/{0}/{1}/{2}_{3}/".format(hadoop_user, special_dir, self.outdir_name, self.tag))
-            if self.use_hadoop:
-                self.output_dir = kwargs.get("output_dir", "/hadoop/cms/store/user/{0}/{1}/{2}_{3}/".format(hadoop_user, special_dir, self.outdir_name, self.tag))
+        # Executable selection (subclass may set input_executable before super().__init__)
+        if not hasattr(self, "input_executable"):
+            default_exe = "metis/executables/condor_exe_hadoop.sh" if self.use_hadoop else "metis/executables/condor_exe.sh"
+            self.input_executable = kwargs.get("executable", self.get_metis_base() + default_exe)
+
+        # Output directory construction
+        special_dir = kwargs.get("special_dir", "ProjectMetis")
+        self.outdir_name = kwargs.get("outdir_name", self._sanitize_dataset_name(self.sample.get_datasetname()))
+        self.output_dir = kwargs.get("output_dir", self._construct_output_dir(special_dir))
 
 
         # I/O mapping (many-to-one as described above)
@@ -95,7 +83,7 @@ class CondorTask(IOMappingMixin, Task):
         self.queried_nevents = 0
 
         # Make a unique name from this task for identification purposes
-        self.unique_name = kwargs.get("unique_name", "{0}_{1}_{2}".format(self.get_task_name(), self.sample.get_datasetname().replace("/", "_").lstrip("_"), self.tag))
+        self.unique_name = kwargs.get("unique_name", "{0}_{1}_{2}".format(self.get_task_name(), self._sanitize_dataset_name(self.sample.get_datasetname()), self.tag))
 
         # Validate that dataset/tag don't introduce path traversal
         for component in [self.unique_name, self.tag, self.output_dir]:
@@ -126,6 +114,21 @@ class CondorTask(IOMappingMixin, Task):
         """
         out.set_status(Constants.DONE)
         self.logger.debug("This output ({0}) exists, skipping the processing".format(out))
+
+    @staticmethod
+    def _sanitize_dataset_name(name):
+        """Convert dataset path to a valid directory component."""
+        return name.replace("/", "_").lstrip("_")
+
+    def _construct_output_dir(self, special_dir):
+        """Construct canonical output directory path."""
+        backend = "hadoop" if self.use_hadoop else "ceph"
+        if self.snt_dir:
+            dataset_dir = self._sanitize_dataset_name(self.sample.get_datasetname())
+            return "/{}/cms/store/group/snt/{}/{}_{}/".format(backend, special_dir, dataset_dir, self.tag)
+        else:
+            hadoop_user = os.environ.get("GRIDUSER", "").strip() or os.environ.get("USER")
+            return "/{}/cms/store/user/{}/{}/{}_{}/".format(backend, hadoop_user, special_dir, self.outdir_name, self.tag)
 
     def get_job_submission_history(self):
         return self.job_submission_history
@@ -280,9 +283,10 @@ class CondorTask(IOMappingMixin, Task):
 
     def run(self, fake=False, optimizer=None):
         """
-        Main logic for looping through (inputs,output) pairs. In this
-        case, this is where we submit, resubmit, etc. to condor
-        If fake is True, then we mark the outputs as done and never submit
+        Main logic: query condor, process outputs in three phases:
+        1. Mark done outputs
+        2. Monitor running condor jobs
+        3. Submit new/resubmitted jobs as batch
         """
         try:
             condor_job_dicts = self.get_running_condor_jobs()
@@ -290,7 +294,6 @@ class CondorTask(IOMappingMixin, Task):
             self.logger.error("Failed to query condor: {}. Skipping this cycle.".format(e))
             return
         condor_jobs_by_index = {int(rj["jobnum"]): rj for rj in condor_job_dicts}
-        condor_job_indices = set(condor_jobs_by_index.keys())
 
         nfiles_reset = self.recache_outputs()
         if nfiles_reset > 0:
@@ -298,58 +301,62 @@ class CondorTask(IOMappingMixin, Task):
 
         to_submit = []
 
-        # main loop over input-output map
         for iout, (ins, out) in enumerate(self.io_mapping):
             if self.max_jobs > 0 and iout >= self.max_jobs:
                 break
 
             try:
-                index = out.get_index()  # "merged_ntuple_42.root" --> 42
+                index = out.get_index()
             except ValueError:
                 self.logger.error("Cannot extract index from output '{}', skipping".format(out.get_name()))
                 continue
-            on_condor = index in condor_job_indices
-            done = (out.exists() and not on_condor)
-            if done:
+
+            on_condor = index in condor_jobs_by_index
+
+            # Phase 1: mark completed outputs
+            if out.exists() and not on_condor:
                 self.handle_done_output(out)
                 continue
 
             if fake:
                 out.set_fake()
 
-            if not on_condor:
-                # Submit and keep a log of condor_ids for each output file that we've submitted
-                to_submit.append({
-                    "ins": ins,
-                    "out": out,
-                    })
-
+            # Phase 2: monitor running jobs
+            if on_condor:
+                self.handle_condor_job(condor_jobs_by_index[index], out)
+            # Phase 3 (accumulate): queue for batch submission
             else:
-                this_job_dict = condor_jobs_by_index[index]
-                action_type = self.handle_condor_job(this_job_dict, out)
+                to_submit.append({"ins": ins, "out": out})
 
+        # Phase 3 (execute): submit accumulated jobs
         if to_submit:
-            v_ins = [d["ins"] for d in to_submit]
-            v_out = [d["out"] for d in to_submit]
-            try:
-                succeeded, cluster_id = self.submit_multiple_condor_jobs(v_ins, v_out, fake=fake, optimizer=optimizer)
-            except Exception as e:
-                self.logger.error("Condor submission failed: {}".format(e))
-                succeeded = False
-                cluster_id = -1
-            procids = [str(i) for i in range(len(v_out))]
-            if succeeded:
-                for out,procid in zip(v_out,procids):
-                    index = out.get_index()  # "merged_ntuple_42.root" --> 42
-                    cid = str(cluster_id).split(".")[0] + "." + procid
-                    if index not in self.job_submission_history:
-                        self.job_submission_history[index] = []
-                    self.job_submission_history[index].append(cid)
-                    ntimes = len(self.job_submission_history[index])
-                    if ntimes <= 1:
-                        self.logger.info("Job for ({0}) submitted to {1}".format(out, cid))
-                    else:
-                        self.logger.info("Job for ({0}) submitted to {1} (for the {2} time)".format(out, cid, Utils.num_to_ordinal_string(ntimes)))
+            self._submit_batch(to_submit, fake=fake, optimizer=optimizer)
+
+    def _submit_batch(self, to_submit, fake=False, optimizer=None):
+        """Submit a batch of jobs to condor and record submission history."""
+        v_ins = [d["ins"] for d in to_submit]
+        v_out = [d["out"] for d in to_submit]
+
+        try:
+            succeeded, cluster_id = self.submit_multiple_condor_jobs(v_ins, v_out, fake=fake, optimizer=optimizer)
+        except Exception as e:
+            self.logger.error("Condor submission failed: {}".format(e))
+            return
+
+        if not succeeded:
+            return
+
+        for procid, out in enumerate(v_out):
+            index = out.get_index()
+            cid = "{}.{}".format(str(cluster_id).split(".")[0], procid)
+            if index not in self.job_submission_history:
+                self.job_submission_history[index] = []
+            self.job_submission_history[index].append(cid)
+            ntimes = len(self.job_submission_history[index])
+            if ntimes <= 1:
+                self.logger.info("Job for ({0}) submitted to {1}".format(out, cid))
+            else:
+                self.logger.info("Job for ({0}) submitted to {1} (for the {2} time)".format(out, cid, Utils.num_to_ordinal_string(ntimes)))
 
     def handle_condor_job(self, this_job_dict, out, fake=False, remove_running_x_hours=48.0, remove_held_x_hours=5.0):
         """

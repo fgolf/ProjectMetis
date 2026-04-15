@@ -149,6 +149,7 @@ class Task(object):
         if os.path.exists(fname_json):
             self._load_json(fname_json)
         elif os.path.exists(fname_pkl):
+            self.logger.info("Loading legacy pickle backup (will migrate to JSON on next save): {}".format(fname_pkl))
             self._load_pickle(fname_pkl)
 
     def _load_json(self, fname):
@@ -334,11 +335,19 @@ class IOMappingMixin(object):
         return None
 
     def add_to_io_map(self, inputs, outputs):
-        """Append [inputs, outputs] to io_mapping. Rejects non-lists and duplicates."""
+        """
+        Append [inputs, outputs] to io_mapping.
+
+        Returns True if added, False if duplicate was skipped.
+        Raises ValueError if inputs or outputs are not lists.
+        """
         if not isinstance(inputs, list) or not isinstance(outputs, list):
-            raise ValueError("Must feed in lists for inputs and outputs")
+            raise ValueError("inputs and outputs must be lists, got {} and {}".format(
+                type(inputs).__name__, type(outputs).__name__))
         if [inputs, outputs] not in self.io_mapping:
             self.io_mapping.append([inputs, outputs])
+            return True
+        return False
 
 
 if __name__ == "__main__":

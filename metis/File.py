@@ -89,15 +89,18 @@ class File(object):
 
     def exists(self):
         """
-        Important NOTE:
-        Below if statement basically caches the existence of
-        this file if True. Call the recheck() method to re-check.
+        Check if file exists, with caching.
+
+        Results are cached to avoid repeated stat() calls on large file lists.
+        Once a file is found to exist, subsequent calls return True without
+        hitting the filesystem. Call recheck() to force a fresh stat.
         """
         if self.file_exists in [None, False]:
             self.file_exists = os.path.exists(self.name)
         return self.file_exists
 
     def recheck(self):
+        """Force a fresh filesystem check, ignoring cached result."""
         self.file_exists = self.fake or os.path.exists(self.name)
 
     def set_status(self, status):
