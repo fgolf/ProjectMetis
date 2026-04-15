@@ -1,13 +1,12 @@
 import os
 
-from metis.Task import Task
+from metis.Task import Task, IOMappingMixin
 from metis.File import File, MutableFile
-import metis.Utils as Utils
 
 import ROOT as r
 import time
 
-class LocalMergeTask(Task):
+class LocalMergeTask(IOMappingMixin, Task):
     def __init__(self, **kwargs):
         """
         Takes a list of input file paths and a single full absolute output filename
@@ -21,10 +20,15 @@ class LocalMergeTask(Task):
         self.update_mapping()
         super(self.__class__, self).__init__(**kwargs)
 
-    def get_inputs(self):
+    # get_io_mapping, reset_io_mapping, get_inputs_for_output,
+    # add_to_io_map inherited from IOMappingMixin
+
+    def get_inputs(self, flatten=True):
+        """LocalMergeTask always returns flattened inputs."""
         return sum([x[0] for x in self.io_mapping], [])
 
-    def get_outputs(self):
+    def get_outputs(self, flatten=True):
+        """LocalMergeTask always returns flattened outputs."""
         return sum([x[1] for x in self.io_mapping], [])
 
     def update_mapping(self):

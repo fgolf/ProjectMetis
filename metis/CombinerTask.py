@@ -1,7 +1,7 @@
-from metis.Task import Task
+from metis.Task import Task, IOMappingMixin
 from metis.File import File
 
-class CombinerTask(Task):
+class CombinerTask(IOMappingMixin, Task):
     def __init__(self, **kwargs):
         # Handle whatever kwargs we want here
         """
@@ -21,6 +21,9 @@ class CombinerTask(Task):
         # Now pass all of them to the parent class
         super(self.__class__, self).__init__(**kwargs)
 
+    # get_inputs, get_io_mapping, reset_io_mapping, get_inputs_for_output,
+    # add_to_io_map inherited from IOMappingMixin
+
     def add_inputs(self, inputs, flush=False):
         if not isinstance(inputs, list):
             raise ValueError("inputs must be a list")
@@ -30,6 +33,7 @@ class CombinerTask(Task):
         self.update_mapping(flush=flush)
 
     def get_outputs(self):
+        """CombinerTask outputs are always flattened (one list, not list of lists)."""
         return sum([x[1] for x in self.io_mapping], [])
 
     def update_mapping(self, flush=False):
@@ -43,29 +47,23 @@ class CombinerTask(Task):
         start_idx = 0 if not last_mapped_input else (self.inputs.index(last_mapped_input) + 1)
         for inp in self.inputs[start_idx:]:
             if num >= self.files_per_output:
-                # push in new chunk
                 self.io_mapping.append([chunk[:], [File(self.output_pattern.format(output_idx))]])
-                # reset current chunk variables
                 output_idx += 1
                 num = 0
                 chunk = []
             chunk.append(inp)
             num += 1
-        # push remaining partial chunk if flush is True
         if (len(chunk) == self.files_per_output) or (flush and len(chunk) > 0):
             self.io_mapping.append([chunk[:], [File(self.output_pattern.format(output_idx))]])
 
     def process(self):
-
         for ins, outs in self.io_mapping:
-            done = all(map(lambda x: x.exists(), outs))
+            done = all(o.exists() for o in outs)
             if done:
                 self.logger.debug("This output ({0}) exists, skipping the processing".format(outs))
                 continue
             self.logger.debug("would go from {0} --> {1}".format(ins, outs))
             for out in outs:
-                # set the file as fake,
-                # so this basically forces its existence
                 out.set_fake()
 
 if __name__ == "__main__":

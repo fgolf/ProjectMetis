@@ -3,11 +3,11 @@ import shutil
 import time
 
 from metis.Constants import Constants
-from metis.Task import Task
+from metis.Task import Task, IOMappingMixin
 from metis.File import EventsFile
 import metis.Utils as Utils
 
-class CondorTask(Task):
+class CondorTask(IOMappingMixin, Task):
     def __init__(self, **kwargs):
 
         """
@@ -130,20 +130,7 @@ class CondorTask(Task):
     def get_job_submission_history(self):
         return self.job_submission_history
 
-    def get_inputs_for_output(self, output):
-        """
-        Takes either a File object or a filename
-        and returns the list of inputs in io_mapping
-        corresponding to that output, or None if not found
-        """
-        for inps, out in self.io_mapping:
-            if isinstance(output, str):
-                if os.path.normpath(output) == os.path.normpath(out.get_name()):
-                    return inps
-            else:
-                if out == output:
-                    return inps
-        return None
+    # get_inputs_for_output inherited from IOMappingMixin
 
     def update_mapping(self, flush=False, override_chunks=[]):
         """
@@ -207,44 +194,19 @@ class CondorTask(Task):
     def get_outputdir(self):
         return self.output_dir
 
-    def get_io_mapping(self):
-        """
-        Return input-output mapping
-        """
-        return self.io_mapping
-
-    def reset_io_mapping(self):
-        """
-        Return input-output mapping
-        """
-        self.io_mapping = []
-
-    def get_inputs(self, flatten=False):
-        """
-        Return list of lists, but only list if flatten is True
-        """
-        ret = [x[0] for x in self.io_mapping]
-        if flatten:
-            return sum(ret, [])
-        else:
-            return ret
+    # get_io_mapping, reset_io_mapping, get_inputs, get_inputs_for_output
+    # inherited from IOMappingMixin
 
     def get_completed_outputs(self):
-        """
-        Return list of completed output objects
-        """
+        """Return list of completed output objects (status-based, not exists-based)."""
         return [o for o in self.get_outputs() if o.get_status() == Constants.DONE]
 
     def get_uncompleted_outputs(self):
-        """
-        Return list of uncompleted output objects
-        """
+        """Return list of uncompleted output objects."""
         return [o for o in self.get_outputs() if o.get_status() != Constants.DONE]
 
     def get_outputs(self):
-        """
-        Return list of lists, but only list if flatten is True
-        """
+        """Return list of output File objects (one per io_mapping entry)."""
         return [x[1] for x in self.io_mapping]
 
     def complete(self, return_fraction=False):

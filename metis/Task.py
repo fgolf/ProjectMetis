@@ -282,6 +282,59 @@ class Task(object):
         """
         return []
 
+class IOMappingMixin(object):
+    """
+    Mixin providing shared io_mapping operations for tasks that use
+    a list-of-pairs mapping: [[inputs_list, output(s)], ...]
+
+    Subclasses must set self.io_mapping = [] before calling super().__init__().
+    """
+
+    def get_io_mapping(self):
+        return self.io_mapping
+
+    def reset_io_mapping(self):
+        self.io_mapping = []
+
+    def get_inputs(self, flatten=False):
+        """Return inputs as list of lists, or flat list if flatten=True."""
+        ret = [x[0] for x in self.io_mapping]
+        if flatten:
+            return sum(ret, [])
+        return ret
+
+    def get_outputs(self, flatten=False):
+        """Return outputs from io_mapping. Subclasses may override flatten behavior."""
+        ret = [x[1] for x in self.io_mapping]
+        if flatten:
+            if ret and isinstance(ret[0], list):
+                return sum(ret, [])
+        return ret
+
+    def get_inputs_for_output(self, output):
+        """
+        Takes either a File object or a filename and returns the
+        corresponding inputs, or None if not found.
+        """
+        import os
+        for inps, out in self.io_mapping:
+            if isinstance(output, str):
+                out_name = out.get_name() if hasattr(out, 'get_name') else str(out)
+                if os.path.normpath(output) == os.path.normpath(out_name):
+                    return inps
+            else:
+                if out == output:
+                    return inps
+        return None
+
+    def add_to_io_map(self, inputs, outputs):
+        """Append [inputs, outputs] to io_mapping. Rejects non-lists and duplicates."""
+        if not isinstance(inputs, list) or not isinstance(outputs, list):
+            raise ValueError("Must feed in lists for inputs and outputs")
+        if [inputs, outputs] not in self.io_mapping:
+            self.io_mapping.append([inputs, outputs])
+
+
 if __name__ == "__main__":
 
     pass
