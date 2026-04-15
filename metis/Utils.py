@@ -22,41 +22,19 @@ import datetime
 from collections import Counter
 from contextlib import contextmanager
 
-# from `condor_status -any -const 'MyType=="glideresource"' -af GLIDEIN_CMSSite | sort | uniq`
-# http://uaf-4.t2.ucsd.edu/~fgolf/dump/badsites.html
-good_sites = set([
+def _load_good_sites():
+    """Load approved sites from good_sites.txt config file."""
+    sites_file = os.path.join(os.path.dirname(__file__), "good_sites.txt")
+    sites = set()
+    if os.path.exists(sites_file):
+        with open(sites_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    sites.add(line)
+    return sites
 
-            "T2_US_Caltech",
-            "T2_US_UCSD",
-            "T3_US_UCR",
-            "T3_US_OSG",
-            # "T2_US_Florida",
-            "T2_US_MIT",
-            "T2_US_Nebraska",
-            "T2_US_Purdue",
-            "T2_US_Vanderbilt",
-            # "T2_US_Wisconsin",
-            "T3_US_Baylor",
-            "T3_US_Colorado",
-            "T3_US_NotreDame",
-            "T3_US_Rice",
-            "T3_US_UMiss",
-            "T3_US_PuertoRico",
-            # "UCSB",
-            # "UAF", # bad (don't spam uafs!!)
-
-            "T3_US_Cornell",
-            "T3_US_FIT",
-            "T3_US_FIU",
-            "T3_US_OSU",
-            "T3_US_Rutgers",
-            "T3_US_TAMU",
-            "T3_US_TTU",
-            "T3_US_UCD",
-            "T3_US_UMD",
-            "T3_US_UMiss",
-
-        ])
+good_sites = _load_good_sites()
 
 
 class cached(object):
