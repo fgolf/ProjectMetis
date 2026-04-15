@@ -212,13 +212,18 @@ class CMSSWTask(CondorTask):
         with open(pset_location_out, "w") as fhin:
             fhin.write(data_in)
             if not self.dont_edit_pset:
+                # Use json.dumps to safely escape strings for embedding in Python code
+                safe_tag = json.dumps(str(self.tag))
+                safe_dsname = json.dumps(str(self.get_sample().get_datasetname()))
+                safe_gtag = json.dumps(str(self.global_tag))
+                safe_reportevery = int(self.report_every)
                 fhin.write("""
 if hasattr(process,"eventMaker"):
-    process.eventMaker.CMS3tag = cms.string('{tag}')
-    process.eventMaker.datasetName = cms.string('{dsname}')
+    process.eventMaker.CMS3tag = cms.string({tag})
+    process.eventMaker.datasetName = cms.string({dsname})
     process.out.dropMetaData = cms.untracked.string("NONE")
     if hasattr(process,"GlobalTag"):
-        process.GlobalTag.globaltag = "{gtag}"
+        process.GlobalTag.globaltag = {gtag}
 if hasattr(process,"MessageLogger"):
     process.MessageLogger.cerr.FwkReport.reportEvery = {reportevery}
     import os
@@ -232,13 +237,13 @@ def set_output_name(outputname):
         if not hasattr(process,attr): continue
         if (type(getattr(process,attr)) != cms.OutputModule) and (attr not in ["TFileService"]): continue
         to_change.append([process,attr])
-    for i in range(len(to_change)):
-        getattr(to_change[i][0],to_change[i][1]).fileName = outputname
-\n\n""".format(tag=self.tag, dsname=self.get_sample().get_datasetname(), gtag=self.global_tag, reportevery=self.report_every)
+    for obj, attr_name in to_change:
+        getattr(obj, attr_name).fileName = outputname
+\n\n""".format(tag=safe_tag, dsname=safe_dsname, gtag=safe_gtag, reportevery=safe_reportevery)
                 )
 
             if self.sparms:
-                sparms = ['"{0}"'.format(sparm) for sparm in self.sparms]
+                sparms = [json.dumps(str(sparm)) for sparm in self.sparms]
                 fhin.write("\nprocess.sParmMaker.vsparms = cms.untracked.vstring(\n{0}\n)\n\n".format(",\n".join(sparms)))
 
         # for LHE where we want to split within files,

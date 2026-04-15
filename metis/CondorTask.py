@@ -456,6 +456,16 @@ class CondorTask(Task):
             extra_columns = []
         return Utils.condor_q(selection_pairs=[["taskname", self.unique_name]], extra_columns=["jobnum"]+extra_columns, use_python_bindings=True)
 
+    @staticmethod
+    def _validate_condor_arg(name, value):
+        """Validate that a condor job argument doesn't contain shell/Python injection characters."""
+        dangerous = set("\"'`;$(){}|&<>\\!")
+        val_str = str(value)
+        bad_chars = dangerous & set(val_str)
+        if bad_chars:
+            raise ValueError("Condor argument '{}' contains unsafe characters {}: {}".format(
+                name, bad_chars, val_str))
+
     def submit_multiple_condor_jobs(self, v_ins, v_out, fake=False, optimizer=None):
 
         outdir = self.output_dir
@@ -463,6 +473,13 @@ class CondorTask(Task):
         if self.output_dir.startswith(prefix):
             outdir = self.output_dir[len(prefix):]
         outname_noext = self.output_name.rsplit(".", 1)[0]
+
+        # Validate arguments that will be interpolated into shell/Python code on worker nodes
+        for name, val in [("output_dir", outdir), ("output_name", outname_noext),
+                          ("cmssw_version", self.cmssw_version), ("scram_arch", self.scram_arch),
+                          ("tag", self.tag)]:
+            if val is not None:
+                self._validate_condor_arg(name, val)
         v_inputs_commasep = [",".join(x.get_name() for x in ins) for ins in v_ins]
         v_index = [out.get_index() for out in v_out]
         cmssw_ver = self.cmssw_version
