@@ -405,8 +405,8 @@ class DirectorySample(Sample):
     def needed_params(self):
         return ["dataset","location"]
 
-    def get_files(self, **kwargs):
-        if self.info.get("files", None):
+    def get_files(self, recache=False, **kwargs):
+        if not recache and self.info.get("files", None):
             return self.info["files"]
         filepaths = glob.glob(self.info["location"] + "/" + self.globber)
         if self.use_xrootd:

@@ -124,9 +124,14 @@ class Task(object):
                 nvars += 1
         fname_tmp = fname_json + ".tmp"
         fd = os.open(fname_tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-        with os.fdopen(fd, "w") as fhout:
-            json.dump(d, fhout, cls=_MetisEncoder, indent=1)
-        os.replace(fname_tmp, fname_json)
+        try:
+            with os.fdopen(fd, "w") as fhout:
+                json.dump(d, fhout, cls=_MetisEncoder, indent=1)
+            os.replace(fname_tmp, fname_json)
+        except Exception:
+            if os.path.exists(fname_tmp):
+                os.remove(fname_tmp)
+            raise
         self.logger.debug("Backed up {0} variables to {1}".format(nvars, fname_json))
         # Remove legacy pickle file if it exists
         fname_pkl = "{0}/backup.pkl".format(taskdir)

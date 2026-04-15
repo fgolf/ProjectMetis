@@ -316,7 +316,9 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=No
 
     elif not do_long:
         cmd = "condor_q {0} {1} {2} -constraint 'JobStatus != 3' -autoformat:t {3} {4}".format(user, cluster_id, extra_cli, columns_str,selection_str)
-        output = do_cmd(cmd) #,dryRun=True)
+        status, output = do_cmd(cmd, returnStatus=True)
+        if status != 0:
+            raise Exception("condor_q failed with status {}: {}".format(status, output[:200]))
         for line in output.splitlines():
             parts = line.split("\t")
             if len(parts) == len(columns):
@@ -326,7 +328,9 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=No
                 jobs.append(tmp)
     else:
         cmd = "condor_q {} {} {} -constraint 'JobStatus != 3' --long --json {}".format(user, cluster_id, extra_cli, selection_str)
-        output = do_cmd(cmd)
+        status, output = do_cmd(cmd, returnStatus=True)
+        if status != 0:
+            raise Exception("condor_q failed with status {}: {}".format(status, output[:200]))
         try:
             parsed = json.loads(output) if output.strip() else []
         except (json.JSONDecodeError, ValueError):

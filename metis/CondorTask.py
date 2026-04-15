@@ -153,6 +153,8 @@ class CondorTask(IOMappingMixin, Task):
             self.queried_nevents = self.sample.get_nevents()
 
         flush = (not self.open_dataset) or flush
+        if "." not in self.output_name:
+            raise ValueError("output_name '{}' must contain an extension (e.g., output.root)".format(self.output_name))
         prefix, suffix = self.output_name.rsplit(".", 1)
         if self.split_within_files:
             if self.total_nevents < 1 or self.events_per_output < 1:
@@ -282,7 +284,11 @@ class CondorTask(IOMappingMixin, Task):
         case, this is where we submit, resubmit, etc. to condor
         If fake is True, then we mark the outputs as done and never submit
         """
-        condor_job_dicts = self.get_running_condor_jobs()
+        try:
+            condor_job_dicts = self.get_running_condor_jobs()
+        except Exception as e:
+            self.logger.error("Failed to query condor: {}. Skipping this cycle.".format(e))
+            return
         condor_jobs_by_index = {int(rj["jobnum"]): rj for rj in condor_job_dicts}
         condor_job_indices = set(condor_jobs_by_index.keys())
 
@@ -297,7 +303,11 @@ class CondorTask(IOMappingMixin, Task):
             if self.max_jobs > 0 and iout >= self.max_jobs:
                 break
 
-            index = out.get_index()  # "merged_ntuple_42.root" --> 42
+            try:
+                index = out.get_index()  # "merged_ntuple_42.root" --> 42
+            except ValueError:
+                self.logger.error("Cannot extract index from output '{}', skipping".format(out.get_name()))
+                continue
             on_condor = index in condor_job_indices
             done = (out.exists() and not on_condor)
             if done:
@@ -321,7 +331,12 @@ class CondorTask(IOMappingMixin, Task):
         if to_submit:
             v_ins = [d["ins"] for d in to_submit]
             v_out = [d["out"] for d in to_submit]
-            succeeded, cluster_id = self.submit_multiple_condor_jobs(v_ins, v_out, fake=fake, optimizer=optimizer)
+            try:
+                succeeded, cluster_id = self.submit_multiple_condor_jobs(v_ins, v_out, fake=fake, optimizer=optimizer)
+            except Exception as e:
+                self.logger.error("Condor submission failed: {}".format(e))
+                succeeded = False
+                cluster_id = -1
             procids = [str(i) for i in range(len(v_out))]
             if succeeded:
                 for out,procid in zip(v_out,procids):

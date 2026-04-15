@@ -48,8 +48,9 @@ class File(object):
     def __eq__(self, other):
         if isinstance(other, str):
             return self.name == other
-        else:
+        elif hasattr(other, 'get_name'):
             return self.name == other.get_name()
+        return NotImplemented
 
     def set_name(self, name):
         self.name = name
@@ -234,7 +235,9 @@ class MutableFile(ImmutableFile):
             open(self.name, "a").close()
 
     def rm(self):
-        if os.path.isdir(self.name):
+        if os.path.islink(self.name):
+            os.remove(self.name)
+        elif os.path.isdir(self.name):
             os.rmdir(self.name)
         elif os.path.isfile(self.name):
             os.remove(self.name)
