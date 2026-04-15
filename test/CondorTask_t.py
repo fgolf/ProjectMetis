@@ -172,7 +172,7 @@ class CondorTaskTest(unittest.TestCase):
         self.assertEqual(self.dummy.handle_condor_job(this_job_dict=job_dict, **params), "RUNNING")
 
         job_dict = {"ClusterId": 123, "ProcId": 0, "JobStatus": "R", "EnteredCurrentStatus": time.time()-(remove_running_x_hours+epsilon_hours)*3600}
-        self.assertEqual(self.dummy.handle_condor_job(this_job_dict=job_dict, **params), "LONG_RUNNING_REMOVED")
+        self.assertEqual(self.dummy.handle_condor_job(this_job_dict=job_dict, **params), "RUNNING_REMOVED")
 
         job_dict = {"ClusterId": 123, "ProcId": 0, "JobStatus": "I", "EnteredCurrentStatus": time.time()}
         self.assertEqual(self.dummy.handle_condor_job(this_job_dict=job_dict, **params), "IDLE")
@@ -181,7 +181,7 @@ class CondorTaskTest(unittest.TestCase):
         self.assertEqual(self.dummy.handle_condor_job(this_job_dict=job_dict, **params), "HELD")
 
         job_dict = {"ClusterId": 123, "ProcId": 0, "JobStatus": "H", "EnteredCurrentStatus": time.time()-(remove_held_x_hours+epsilon_hours)*3600}
-        self.assertEqual(self.dummy.handle_condor_job(this_job_dict=job_dict, **params), "HELD_AND_REMOVED")
+        self.assertEqual(self.dummy.handle_condor_job(this_job_dict=job_dict, **params), "HELD_REMOVED")
 
         
 

@@ -358,45 +358,47 @@ class CondorTask(IOMappingMixin, Task):
             else:
                 self.logger.info("Job for ({0}) submitted to {1} (for the {2} time)".format(out, cid, Utils.num_to_ordinal_string(ntimes)))
 
+    # Job state config: maps condor status letter to behavior
+    _JOB_STATES = {
+        "R": {"name": "RUNNING", "status": Constants.RUNNING, "remove_hours_key": "remove_running_x_hours"},
+        "I": {"name": "IDLE",    "status": Constants.IDLE,    "remove_hours_key": None},
+        "H": {"name": "HELD",    "status": Constants.HELD,    "remove_hours_key": "remove_held_x_hours"},
+    }
+
     def handle_condor_job(self, this_job_dict, out, fake=False, remove_running_x_hours=48.0, remove_held_x_hours=5.0):
         """
-        takes `out` (File object) and dictionary of condor
-        job information returns action_type specifying the type of action taken
-        given the info
+        Process a condor job's current state: log status, set output status,
+        and remove jobs that exceed time thresholds.
+        Returns action_type string (e.g., "RUNNING", "RUNNING_REMOVED", "HELD_REMOVED").
         """
-        cluster_id = "{}".format(this_job_dict["ClusterId"])
-        running = this_job_dict.get("JobStatus", "I") == "R"
-        idle = this_job_dict.get("JobStatus", "I") == "I"
-        held = this_job_dict.get("JobStatus", "I") == "H"
+        cluster_id = str(this_job_dict["ClusterId"])
+        job_status = this_job_dict.get("JobStatus", "I")
         hours_since = max(0, time.time() - int(this_job_dict["EnteredCurrentStatus"])) / 3600.
+        thresholds = {"remove_running_x_hours": remove_running_x_hours, "remove_held_x_hours": remove_held_x_hours}
 
-        action_type = "UNKNOWN"
-        out.set_status(Constants.RUNNING)
-
-        if running:
-            self.logger.debug("Job {0} for ({1}) running for {2:.1f} hrs".format(cluster_id, out, hours_since))
-            action_type = "RUNNING"
+        state = self._JOB_STATES.get(job_status)
+        if not state:
+            self.logger.warning("Job {} for ({}) has unknown status '{}'".format(cluster_id, out, job_status))
             out.set_status(Constants.RUNNING)
+            return "UNKNOWN"
 
-            if hours_since > remove_running_x_hours:
-                self.logger.debug("Job {0} for ({1}) removed for running for more than a day!".format(cluster_id, out))
-                if not fake: Utils.condor_rm([cluster_id])
-                action_type = "LONG_RUNNING_REMOVED"
+        action_type = state["name"]
+        out.set_status(state["status"])
 
-        elif idle:
-            self.logger.debug("Job {0} for ({1}) idle for {2:.1f} hrs".format(cluster_id, out, hours_since))
-            action_type = "IDLE"
-            out.set_status(Constants.IDLE)
+        # Log with hold reason if applicable
+        extra = ""
+        if job_status == "H":
+            extra = " (hold reason: {})".format(this_job_dict.get("HoldReason", "???"))
+        self.logger.debug("Job {} for ({}) {} for {:.1f} hrs{}".format(cluster_id, out, action_type.lower(), hours_since, extra))
 
-        elif held:
-            self.logger.debug("Job {0} for ({1}) held for {2:.1f} hrs with hold reason: {3}".format(cluster_id, out, hours_since, this_job_dict.get("HoldReason", "???")))
-            action_type = "HELD"
-            out.set_status(Constants.HELD)
-
-            if hours_since > remove_held_x_hours:
-                self.logger.info("Job {0} for ({1}) removed for excessive hold time".format(cluster_id, out))
-                if not fake: Utils.condor_rm([cluster_id])
-                action_type = "HELD_AND_REMOVED"
+        # Remove if over threshold
+        if state["remove_hours_key"]:
+            threshold = thresholds[state["remove_hours_key"]]
+            if hours_since > threshold:
+                self.logger.info("Job {} for ({}) removed ({} > {:.0f}h threshold)".format(cluster_id, out, action_type.lower(), threshold))
+                if not fake:
+                    Utils.condor_rm([cluster_id])
+                action_type = "{}_REMOVED".format(action_type)
 
         return action_type
 
