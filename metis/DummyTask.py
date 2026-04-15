@@ -19,8 +19,10 @@ class DummyMoveTask(Task):
         return self.outputs
 
     def complete(self):
-        bools = list(map(lambda output: output.exists(), self.get_outputs()))
-        frac = 1.0 * sum(bools) / len(bools)
+        outputs = self.get_outputs()
+        if not outputs:
+            return True
+        frac = sum(1 for o in outputs if o.exists()) / len(outputs)
         return frac >= self.min_completion_fraction
 
     def process(self):
