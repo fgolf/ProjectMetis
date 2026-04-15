@@ -12,8 +12,6 @@ except:
     have_python_htcondor_bindings = False
 import logging
 import datetime
-import shelve
-import fcntl
 from collections import Counter
 from contextlib import contextmanager
 
@@ -54,37 +52,38 @@ good_sites = set([
         ])
 
 
-class cached(object): # pragma: no cover
+class cached(object):
     """
-    decorate with
-    @cached(default_max_age = datetime.timedelta(seconds=5*60))
+    In-memory caching decorator with TTL.
+
+    Usage:
+        @cached(default_max_age=datetime.timedelta(seconds=5*60))
+        def expensive_query(...):
+            ...
+
+    Callers can override TTL per-call via max_age kwarg:
+        expensive_query(..., max_age=datetime.timedelta(seconds=60))
     """
     def __init__(self, *args, **kwargs):
-        self.cached_function_responses = {}
+        self._cache = {}
         self.default_max_age = kwargs.get("default_max_age", datetime.timedelta(seconds=0))
-        self.cache_file = kwargs.get("filename", "cache.shelf")
+        # filename kwarg accepted for backwards compatibility but ignored
+        # (cache is now in-memory only)
 
     def __call__(self, func):
         def inner(*args, **kwargs):
-            lockfd = open(self.cache_file + ".lock", "a")
-            try:
-                self.cached_function_responses = shelve.open(self.cache_file)
-                fcntl.flock(lockfd, fcntl.LOCK_EX)
-                max_age = kwargs.get('max_age', self.default_max_age)
-                if isinstance(max_age, (int, float)):
-                    max_age = datetime.timedelta(seconds=max_age)
-                funcname = func.__name__
-                key = "|".join([str(funcname), str(args), str(kwargs)])
-                if not max_age or key not in self.cached_function_responses or (datetime.datetime.now() - self.cached_function_responses[key]['fetch_time'] > max_age):
-                    if 'max_age' in kwargs: del kwargs['max_age']
-                    res = func(*args, **kwargs)
-                    self.cached_function_responses[key] = {'data': res, 'fetch_time': datetime.datetime.now()}
-                to_ret = self.cached_function_responses[key]['data']
-            finally:
-                self.cached_function_responses.close()
-                fcntl.flock(lockfd, fcntl.LOCK_UN)
-                lockfd.close()
-            return to_ret
+            max_age = kwargs.pop('max_age', self.default_max_age)
+            if isinstance(max_age, (int, float)):
+                max_age = datetime.timedelta(seconds=max_age)
+            key = "{}|{}|{}".format(func.__name__, args, kwargs)
+            now = datetime.datetime.now()
+            if key in self._cache:
+                entry = self._cache[key]
+                if max_age and (now - entry['fetch_time']) <= max_age:
+                    return entry['data']
+            res = func(*args, **kwargs)
+            self._cache[key] = {'data': res, 'fetch_time': now}
+            return res
         return inner
 
 
@@ -245,7 +244,7 @@ def setup_logger(logger_name="logger_metis"): # pragma: no cover
     logger.addHandler(ch)
     return logger_name
 
-def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=[], schedd=None,do_long=False,use_python_bindings=False,extra_constraint=""):
+def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=None, schedd=None,do_long=False,use_python_bindings=False,extra_constraint=""):
     """
     Return list of dicts with items for each of the columns
     - Selection pair is a list of pairs of [variable_name, variable_value]
@@ -258,6 +257,8 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=[]
     """
 
     # These are the condor_q -l row names
+    if extra_columns is None:
+        extra_columns = []
     columns = ["ClusterId", "ProcId", "JobStatus", "EnteredCurrentStatus", "CMD", "ARGS", "Out", "Err", "HoldReason"]
     columns.extend(extra_columns)
 
