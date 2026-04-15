@@ -73,12 +73,11 @@ class File(object):
         return self.get_basename().rsplit(".", 1)[0]
 
     def get_index(self):
-        if "." in self.name:
+        try:
             noext = self.name.rsplit(".", 1)[0]
-            index = int(noext.rsplit("_", 1)[1])
-            return index
-        else:
-            raise Exception("Can't extract index from {0}".format(self.get_name()))
+            return int(noext.rsplit("_", 1)[1])
+        except (IndexError, ValueError):
+            raise ValueError("Can't extract numeric index from '{0}' (expected format: name_N.ext)".format(self.get_name()))
 
     def get_filesizeMB(self):
         if self.exists():

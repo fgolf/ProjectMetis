@@ -522,7 +522,7 @@ class FilelistSample(DirectorySample):
         if self.info.get("files", None):
             return self.info["files"]
 
-        if type(self.filelist) == list:
+        if isinstance(self.filelist, list):
             filepaths = self.filelist
         else:
             imf = ImmutableFile(self.filelist)

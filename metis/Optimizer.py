@@ -81,7 +81,6 @@ class Optimizer(object):
         replica_info = get_file_replicas(task.get_sample().get_datasetname())
         sub_history = task.get_job_submission_history()
         logdir_full = os.path.abspath("{0}/logs/std_logs/".format(task.get_taskdir()))
-        logdir_full = os.path.abspath("{0}/logs/std_logs/".format(task.get_taskdir()))
         last_run_site = None
         v_csvsites = [] # comma-separated sites for each job to submit
         for ins,out in zip(v_ins,v_out):

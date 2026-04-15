@@ -423,8 +423,6 @@ class CondorTask(Task):
         if (not self.prepared_inputs) or self.recopy_inputs:
             self.prepare_inputs()
 
-        #print('io_mapping: ',self.io_mapping())
-
         self.run(fake=fake, optimizer=optimizer)
 
         self.try_to_complete()

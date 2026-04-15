@@ -65,7 +65,7 @@ class ConcurrentFailureMoveTask(Task):
         [inputs,outputs] simply gets appended to io_mapping
         Duplicates do not get appended!
         """
-        if type(inputs) != list or type(outputs) != list:
+        if not isinstance(inputs, list) or not isinstance(outputs, list):
             raise ValueError("Must feed in lists for inputs and outputs")
 
         if [inputs, outputs] not in self.io_mapping:
