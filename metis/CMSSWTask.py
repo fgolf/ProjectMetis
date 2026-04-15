@@ -101,6 +101,13 @@ class CMSSWTask(CondorTask):
         pset_args = self.pset_args
         executable = self.executable_path
         other_outputs = ",".join(self.other_outputs) or "None"
+
+        # Validate user-provided values that flow into shell scripts on worker nodes
+        for name, val in [("pset_args", pset_args), ("other_outputs", other_outputs),
+                          ("arguments", self.arguments)]:
+            if val:
+                self._validate_condor_arg(name, val)
+
         # note that pset_args must be the last argument since it can have spaces
         # check executables/condor_cmssw_exe.sh to see why
         v_arguments = [[outdir, outname_noext, inputs_commasep,
