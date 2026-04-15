@@ -12,7 +12,7 @@ class _MetisEncoder(json.JSONEncoder):
         from metis.File import File, EventsFile, FileDBS
         if isinstance(obj, FileDBS):
             return {"__metis_class__": "FileDBS", "name": obj.name,
-                    "nevents": obj.nevents, "nevents_negative": obj.nevents_negative,
+                    "nevents": obj.nevents,
                     "filesizeGB": getattr(obj, "filesizeGB", 0.0),
                     "status": obj.status, "fake": obj.fake}
         elif isinstance(obj, EventsFile):
@@ -121,9 +121,11 @@ class Task(object):
             if hasattr(self, tob):
                 d[tob] = getattr(self, tob)
                 nvars += 1
-        with open(fname_json, "w") as fhout:
+        fname_tmp = fname_json + ".tmp"
+        with open(fname_tmp, "w") as fhout:
             json.dump(d, fhout, cls=_MetisEncoder, indent=1)
-            self.logger.debug("Backed up {0} variables to {1}".format(nvars, fname_json))
+        os.replace(fname_tmp, fname_json)
+        self.logger.debug("Backed up {0} variables to {1}".format(nvars, fname_json))
         try:
             os.chmod(fname_json, 0o600)
         except OSError:
@@ -158,7 +160,12 @@ class Task(object):
         except OSError:
             pass
         with open(fname, "r") as fhin:
-            data = json.load(fhin, object_hook=_metis_decoder)
+            try:
+                data = json.load(fhin, object_hook=_metis_decoder)
+            except (json.JSONDecodeError, ValueError):
+                self.logger.warning("Corrupt backup file {}, removing".format(fname))
+                os.remove(fname)
+                return
             nvars = len(data.keys())
             for key in data:
                 setattr(self, key, data[key])
