@@ -105,9 +105,9 @@ class Optimizer(object):
                 replica_sites = replica_info.get(infile.get_name(),{}).get("nodes",[])
                 sites_per_file.append(set(replica_sites))
             # the intersection of all sites per input file (i.e., sites where all inputs exist)
-            sites_with_all_files = reduce(lambda x,y: x&y, sites_per_file)
+            sites_with_all_files = reduce(lambda x,y: x&y, sites_per_file) if sites_per_file else set()
             # union (i.e., sites where at least one input exists)
-            sites_with_some_files = reduce(lambda x,y: x|y, sites_per_file)
+            sites_with_some_files = reduce(lambda x,y: x|y, sites_per_file) if sites_per_file else set()
 
             had3failures = set([s for s,num in times_run.items() if num>=3])
 

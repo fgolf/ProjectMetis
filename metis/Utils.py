@@ -82,7 +82,7 @@ class cached(object):
             max_age = kwargs.pop('max_age', self.default_max_age)
             if isinstance(max_age, (int, float)):
                 max_age = datetime.timedelta(seconds=max_age)
-            key = "{}|{}|{}".format(func.__name__, args, kwargs)
+            key = "{}|{}|{}".format(func.__name__, args, sorted(kwargs.items()))
             now = datetime.datetime.now()
             if key in self._cache:
                 entry = self._cache[key]
@@ -327,7 +327,11 @@ def condor_q(selection_pairs=None, user="$USER", cluster_id="", extra_columns=No
     else:
         cmd = "condor_q {} {} {} -constraint 'JobStatus != 3' --long --json {}".format(user, cluster_id, extra_cli, selection_str)
         output = do_cmd(cmd)
-        for tmp in json.loads(output):
+        try:
+            parsed = json.loads(output) if output.strip() else []
+        except (json.JSONDecodeError, ValueError):
+            parsed = []
+        for tmp in parsed:
             tmp["JobStatus"] = status_LUT.get(tmp.get("JobStatus",0),"U")
             tmp["ClusterId"] = "{}.{}".format(tmp["ClusterId"],tmp["ProcId"])
             jobs.append(tmp)

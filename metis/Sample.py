@@ -299,7 +299,7 @@ class Sample(object):
         self.load_from_dis()
         return self.info["nevts"]
 
-    def get_files(self):
+    def get_files(self, **kwargs):
         if self.info.get("files", None):
             return self.info["files"]
         self.load_from_dis()
@@ -357,8 +357,8 @@ class DBSSample(Sample):
         self.load_from_dbs()
         return self.info["nevts"]
 
-    def get_files(self):
-        if self.info.get("files", None):
+    def get_files(self, recache=False):
+        if not recache and self.info.get("files", None):
             return self.info["files"]
         self.load_from_dbs()
         return self.info["files"]
@@ -405,7 +405,7 @@ class DirectorySample(Sample):
     def needed_params(self):
         return ["dataset","location"]
 
-    def get_files(self):
+    def get_files(self, **kwargs):
         if self.info.get("files", None):
             return self.info["files"]
         filepaths = glob.glob(self.info["location"] + "/" + self.globber)
@@ -464,7 +464,7 @@ class SNTSample(DirectorySample):
             raise RuntimeError("Failed to get location for this sample!")
         return self.info["location"]
 
-    def get_files(self):
+    def get_files(self, **kwargs):
         if self.info.get("files", None):
             return self.info["files"]
         filepaths = glob.glob(self.get_location() + "/" + self.globber)
@@ -519,7 +519,7 @@ class FilelistSample(DirectorySample):
     def needed_params(self):
         return ["dataset","filelist"]
 
-    def get_files(self):
+    def get_files(self, **kwargs):
         if self.info.get("files", None):
             return self.info["files"]
 
@@ -572,7 +572,7 @@ class DummySample(DirectorySample):
     def needed_params(self):
         return ["dataset"]
 
-    def get_files(self):
+    def get_files(self, **kwargs):
         if self.info.get("files", None):
             return self.info["files"]
         extra = {}

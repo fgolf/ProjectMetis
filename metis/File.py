@@ -53,6 +53,7 @@ class File(object):
 
     def set_name(self, name):
         self.name = name
+        self.file_exists = None  # reset cache for new name
 
     def get_name(self):
         return self.name
@@ -201,7 +202,8 @@ class FileDBS(File):
         super(self.__class__, self).__init__(name, **kwargs)
 
     def __hash__(self):
-        return hash((self.name, self.nevents))
+        # Must be consistent with __eq__ (inherited), which compares only name
+        return hash(self.name)
 
     def get_nevents(self):
         return self.nevents

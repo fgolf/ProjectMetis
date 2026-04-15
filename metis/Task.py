@@ -82,10 +82,11 @@ class Task(object):
         return self.basedir
 
     def get_taskdir(self):
-        task_dir = "{0}/tasks/{1}/".format(self.get_basedir(), self.unique_name)
-        if not os.path.exists(task_dir):
+        if not hasattr(self, '_taskdir'):
+            task_dir = "{0}/tasks/{1}/".format(self.get_basedir(), self.unique_name)
             os.makedirs("{}/logs/std_logs/".format(task_dir), exist_ok=True)
-        return os.path.normpath(task_dir)
+            self._taskdir = os.path.normpath(task_dir)
+        return self._taskdir
 
     def get_metis_base(self):
         return metis_base()

@@ -132,7 +132,7 @@ class CondorTask(IOMappingMixin, Task):
 
     # get_inputs_for_output inherited from IOMappingMixin
 
-    def update_mapping(self, flush=False, override_chunks=[]):
+    def update_mapping(self, flush=False, override_chunks=None):
         """
         Given the sample, make the input-output mapping by chunking
         """
@@ -149,7 +149,7 @@ class CondorTask(IOMappingMixin, Task):
         if (len(already_mapped_inputs) > 0 and not self.open_dataset):
             files = []
         else:
-            files = [f for f in self.sample.get_files() if f.get_name() not in already_mapped_inputs]
+            files = [f for f in self.sample.get_files(recache=self.open_dataset) if f.get_name() not in already_mapped_inputs]
             self.queried_nevents = self.sample.get_nevents()
 
         flush = (not self.open_dataset) or flush
@@ -165,7 +165,7 @@ class CondorTask(IOMappingMixin, Task):
             if self.max_jobs > 0:
                 chunks = chunks[:self.max_jobs]
                 leftoverchunk = []
-        if len(override_chunks) > 0:
+        if override_chunks:
             self.logger.info("Manual override to have {0} chunks".format(len(override_chunks)))
             chunks = override_chunks
             leftoverchunk = []
@@ -346,7 +346,7 @@ class CondorTask(IOMappingMixin, Task):
         running = this_job_dict.get("JobStatus", "I") == "R"
         idle = this_job_dict.get("JobStatus", "I") == "I"
         held = this_job_dict.get("JobStatus", "I") == "H"
-        hours_since = abs(time.time() - int(this_job_dict["EnteredCurrentStatus"])) / 3600.
+        hours_since = max(0, time.time() - int(this_job_dict["EnteredCurrentStatus"])) / 3600.
 
         action_type = "UNKNOWN"
         out.set_status(Constants.RUNNING)
