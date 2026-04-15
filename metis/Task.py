@@ -4,7 +4,7 @@ import traceback
 import logging
 import pickle
 
-from metis.Utils import setup_logger, do_cmd, do_cmd_safe, metis_base
+from metis.Utils import setup_logger, metis_base
 
 class _MetisEncoder(json.JSONEncoder):
     """JSON encoder that handles File/EventsFile objects."""
@@ -84,7 +84,7 @@ class Task(object):
     def get_taskdir(self):
         task_dir = "{0}/tasks/{1}/".format(self.get_basedir(), self.unique_name)
         if not os.path.exists(task_dir):
-            do_cmd_safe(["mkdir", "-p", "{}/logs/std_logs/".format(task_dir)])
+            os.makedirs("{}/logs/std_logs/".format(task_dir), exist_ok=True)
         return os.path.normpath(task_dir)
 
     def get_metis_base(self):
@@ -122,14 +122,11 @@ class Task(object):
                 d[tob] = getattr(self, tob)
                 nvars += 1
         fname_tmp = fname_json + ".tmp"
-        with open(fname_tmp, "w") as fhout:
+        fd = os.open(fname_tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fhout:
             json.dump(d, fhout, cls=_MetisEncoder, indent=1)
         os.replace(fname_tmp, fname_json)
         self.logger.debug("Backed up {0} variables to {1}".format(nvars, fname_json))
-        try:
-            os.chmod(fname_json, 0o600)
-        except OSError:
-            pass
         # Remove legacy pickle file if it exists
         fname_pkl = "{0}/backup.pkl".format(taskdir)
         if os.path.exists(fname_pkl):

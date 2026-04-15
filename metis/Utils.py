@@ -470,7 +470,7 @@ when_to_transfer_output = ON_EXIT
     schedd = kwargs.get("schedd","") # see note in condor_q about `schedd`
     if schedd:
         extra_cli += " -name {} ".format(schedd)
-    do_cmd_safe(["mkdir", "-p", "{}/std_logs/".format(params["logdir"])])
+    os.makedirs("{}/std_logs/".format(params["logdir"]), exist_ok=True)
     submit_cmd = ["condor_submit", "{}/submit.cmd".format(exe_dir)]
     if extra_cli.strip():
         submit_cmd.extend(extra_cli.split())
@@ -532,10 +532,11 @@ def update_dashboard(webdir=None, jsonfile=None): # pragma: no cover
     webdir = os.path.expanduser(webdir)
     if not os.path.exists(webdir):
         mb = metis_base()
-        do_cmd_safe(["mkdir", "-p", "{}/plots/".format(webdir)])
+        os.makedirs("{}/plots/".format(webdir), exist_ok=True)
         do_cmd("cp -rp {}/dashboard/* {}/".format(mb, webdir), dryRun=False)
     if jsonfile and os.path.exists(jsonfile):
-        do_cmd_safe(["cp", jsonfile, "{}/".format(webdir)])
+        import shutil
+        shutil.copy2(jsonfile, "{}/".format(webdir))
         do_cmd("cp plots/* {}/plots/".format(webdir), dryRun=False)
 
 def hsv_to_rgb(h, s, v): # pragma: no cover

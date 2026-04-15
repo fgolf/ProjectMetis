@@ -363,21 +363,22 @@ class DBSSample(Sample):
         self.load_from_dbs()
         return self.info["files"]
 
+    def _fetch_config(self):
+        """Fetch config (global tag + CMSSW version) once, cache both."""
+        if not self.info.get("gtag") or not self.info.get("native_cmssw"):
+            response = self.do_dis_query(self.info["dataset"], typ="config")
+            self.info["gtag"] = str(response.get("global_tag", ""))
+            self.info["native_cmssw"] = str(response.get("native_cmssw", response.get("release_version", "")))
+
     def get_globaltag(self):
-        if self.info.get("gtag", None):
-            return self.info["gtag"]
-        response = self.do_dis_query(self.info["dataset"], typ="config")
-        self.info["gtag"] = str(response.get("global_tag", ""))
-        self.info["native_cmssw"] = str(response.get("release_version", ""))
-        return self.info["gtag"]
+        if not self.info.get("gtag"):
+            self._fetch_config()
+        return self.info.get("gtag", "")
 
     def get_native_cmssw(self):
-        if self.info.get("native_cmssw", None):
-            return self.info["native_cmssw"]
-        response = self.do_dis_query(self.info["dataset"], typ="config")
-        self.info["gtag"] = response.get("global_tag", "")
-        self.info["native_cmssw"] = response.get("native_cmssw", response.get("release_version", ""))
-        return self.info["native_cmssw"]
+        if not self.info.get("native_cmssw"):
+            self._fetch_config()
+        return self.info.get("native_cmssw", "")
 
 class DirectorySample(Sample):
     """

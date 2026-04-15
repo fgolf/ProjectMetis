@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 
 from metis.Constants import Constants
@@ -285,7 +286,10 @@ class CondorTask(Task):
                 continue
             new_mapping.append([ins,out])
         for fname in files_to_remove:
-            Utils.do_cmd_safe(["rm", fname])
+            try:
+                os.remove(fname)
+            except OSError:
+                pass
             self.logger.info("Tail root file {} removed".format(fname))
         self.io_mapping = new_mapping
 
@@ -529,11 +533,11 @@ class CondorTask(Task):
         self.package_path = "{0}/package.tar.gz".format(self.get_taskdir())
 
         # take care of executable. easy.
-        Utils.do_cmd_safe(["cp", self.input_executable, self.executable_path])
+        shutil.copy2(self.input_executable, self.executable_path)
 
         # take care of package tar file if we were told to. easy.
         if self.tarfile:
-            Utils.do_cmd_safe(["cp", self.tarfile, self.package_path])
+            shutil.copy2(self.tarfile, self.package_path)
 
         self.prepared_inputs = True
 
